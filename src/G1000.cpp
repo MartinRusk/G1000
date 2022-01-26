@@ -115,7 +115,7 @@ private:
     const char *_up;
     const char *_dn;
     bool _old1, _old2;
-    long _count, _mark;
+    int8_t _count, _mark;
     bool *_input1, *_input2;
 };
 Encoder::Encoder(const char* up, const char* dn) {
@@ -156,12 +156,12 @@ void Encoder::handle(bool input1, bool input2) {
 		default:
 			_count -= 2; break;
 	}
-    if (_count >= _mark + PULSES_PER_DETENT) {
+    if (_count - _mark >= PULSES_PER_DETENT) {
         Serial.write(_up);
         Serial.write("\n");
         _mark = _mark + PULSES_PER_DETENT;
     }
-    if (_count <= _mark - PULSES_PER_DETENT) {
+    if (_count - _mark <= -PULSES_PER_DETENT) {
         Serial.write(_dn);
         Serial.write("\n");
         _mark = _mark - PULSES_PER_DETENT;
