@@ -115,7 +115,7 @@ private:
     const char *_up;
     const char *_dn;
     bool _old1, _old2;
-    int8_t _count, _mark;
+    int16_t _count, _mark;
     bool *_input1, *_input2;
 };
 Encoder::Encoder(const char* up, const char* dn) {
