@@ -7,7 +7,6 @@
 #define BOARD_ID "0001"
 #define AP_NXI 1
 #define AP_STD 0
-#define BRD_NANO 1
 #define DEBUG 0
 #define MFD_AVAILABLE 0
 #define MAX_BUTTONS 45
@@ -23,7 +22,7 @@ uint8_t mux2[16];
 // setup multiplexer pins as outputs
 void muxSetup()
 {
-#if BRD_NANO
+#ifdef ARDUINO_AVR_NANO
     pinMode(2, OUTPUT);
     pinMode(3, OUTPUT);
     pinMode(4, OUTPUT);
@@ -41,7 +40,7 @@ void muxScan()
 {
     for (uint8_t channel = 0; channel < 16; channel++)
     {
-#if BRD_NANO
+#ifdef ARDUINO_AVR_NANO
         digitalWrite(4, channel & 1);
         digitalWrite(5, channel & 2);
         digitalWrite(2, channel & 4);
