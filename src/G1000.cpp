@@ -2,30 +2,46 @@
 #include "Arduino.h"
 
 // configuration
-#define VERSION "1.3.0"
+#define VERSION "1.3.3"
+#define UNIT_PFD 1
+
+// Select unit
+#if UNIT_PFD
 #define BOARD_ID "0001"
-// printout debug data
-#define DEBUG 0
+// autopilot layout (set both to 0 if no AP connected)
+#define AP_NXI 0
+#define AP_STD 0
+#define LEDS_AVAILABLE 1
+#define NUM_LEDS 3
+#else
+#define BOARD_ID "0002"
 // autopilot layout (set both to 0 if no AP connected)
 #define AP_NXI 1
 #define AP_STD 0
-// optional, only if MFD is coded below
-#define MFD_AVAILABLE 0
+#define LEDS_AVAILABLE 1
+#define NUM_LEDS 7
+#endif
+
+// printout debug data
+#define DEBUG 0
 // reserve space for input devices
-#define MAX_BUTTONS 45
-#define MAX_ENCODERS 14
+#define MAX_BUTTONS 47
+#define MAX_SWITCHES 13
+#define MAX_ENCODERS 15
 // optional if LED outputs are connected
-#define LEDS_AVAILABLE 0
-#define NUM_LEDS 8 
-#define DM13A_DAI 11
-#define DM13A_DCK 12 
-#define DM13A_LAT 13
+#define DM13A_DAI 10
+#define DM13A_DCK 13
+#define DM13A_LAT 12
 
 // storage for input devices
 struct button_t
 {
     bool _state;
 } Buttons[MAX_BUTTONS];
+struct switch_t
+{
+    bool _state;
+} Switches[MAX_SWITCHES];
 struct encoder_t
 {
     int8_t _count, _mark;
@@ -68,15 +84,6 @@ void handleMux()
         digitalWrite(5, channel & 2);
         digitalWrite(2, channel & 4);
         digitalWrite(3, channel & 8);
-        // scan all physical inputs into virtual inputs
-        for (uint8_t input = 0; input < 6; input++)
-        {
-            // invert signal here b/c switches are pull down
-            // mux inputs start at PIN8
-            mux1[channel] |= !digitalRead(input + 8) << input;
-            mux2[channel] |= !digitalRead(input + 14) << input;
-        }
-        // delay
         for (uint8_t i = 0; i < 100; i++)
             ;
         mux1[channel] = (~PINC & 0x3F);
@@ -130,6 +137,26 @@ void handleButton(button_t *but, const char *name, bool repeat, bool input)
         }
     }
     but->_state = input;
+}
+
+// Switches
+void initSwitch(switch_t *sw)
+{
+    sw->_state = false;
+}
+void handleSwitch(switch_t *sw, const char *name, bool input)
+{
+    if (input && !sw->_state)
+    {
+        Serial.write(name);
+        Serial.write(".SW.ON\n");
+    }    
+    if (!input && sw->_state)
+    {
+        Serial.write(name);
+        Serial.write(".SW.OFF\n");
+    }
+    sw->_state = input;
 }
 
 // Encoders
@@ -188,14 +215,6 @@ void handleEncoder(encoder_t *enc, const char *up, const char *dn, bool input1, 
 
 // LEDs
 #if LEDS_AVAILABLE
-void setupLEDs()
-{
-    pinMode(DM13A_LAT, OUTPUT);
-    pinMode(DM13A_DCK, OUTPUT);
-    pinMode(DM13A_DAI, OUTPUT);
-    digitalWrite(DM13A_LAT, LOW);
-    digitalWrite(DM13A_DAI, LOW);
-}
 void writeLEDs(uint16_t leds)
 {
     shiftOut(DM13A_DAI, DM13A_DCK, MSBFIRST, (leds & 0xFF00) >> 8);
@@ -203,24 +222,63 @@ void writeLEDs(uint16_t leds)
     digitalWrite(DM13A_LAT, HIGH);
     digitalWrite(DM13A_LAT, LOW);
 }
+void setupLEDs()
+{
+    pinMode(DM13A_LAT, OUTPUT);
+    pinMode(DM13A_DCK, OUTPUT);
+    pinMode(DM13A_DAI, OUTPUT);
+    digitalWrite(DM13A_LAT, LOW);
+    digitalWrite(DM13A_DAI, LOW);
+    uint16_t leds = 0;
+    for (uint8_t i = 0; i < NUM_LEDS; ++i)
+    {
+        leds = (1 << i);
+        writeLEDs(leds);
+        delay(100);
+    }
+    writeLEDs(0x0000);
+}
 void handleLEDs()
 {
     if (Serial.available() > NUM_LEDS)
-    {   //full dataword available from RSG driver
-        //capture full databurst and parse through it
+    { // full dataword available from RSG driver
+        // capture full databurst and parse through it
         String leddata = Serial.readStringUntil('\n');
         uint16_t leds = 0;
         for (uint8_t i = 0; i < NUM_LEDS; ++i)
         {
             if (leddata.charAt(i + 1) == '1')
             {
-                leds |= 1 << i;
+                leds |= (1 << i);
             }
         }
         writeLEDs(leds);
     }
 }
 #endif
+
+int8_t sw1_old = 0;
+int8_t sw2_old = 0;
+
+void handlePoti()
+{
+    int8_t sw1 = analogRead(6) >> 6;
+    int8_t sw2 = analogRead(7) >> 6;
+    if (sw1 != sw1_old)
+    {
+        sw1_old = sw1;
+        Serial.write("SW_INSTR_");
+        Serial.print(sw1);
+        Serial.write("=1\n");
+    }
+    if (sw2 != sw2_old)
+    {
+        sw2_old = sw2;
+        Serial.write("SW_FLOOD_");
+        Serial.print(sw2);
+        Serial.write("=1\n");
+    }
+}
 
 // helper
 bool getBit(uint8_t val, uint8_t bit)
@@ -247,6 +305,10 @@ void setup()
     {
         initButton(&Buttons[but]);
     }
+    for (uint8_t sw = 0; sw < MAX_SWITCHES; sw++)
+    {
+        initSwitch(&Switches[sw]);
+    }
     for (uint8_t enc = 0; enc < MAX_ENCODERS; enc++)
     {
         initEncoder(&Encoders[enc]);
@@ -256,9 +318,12 @@ void setup()
 // Main loop routine
 void loop()
 {
+    // scan Multiplexers into virtual inputs
+    handleMux();
+
     // keep alive for RSG connection
     if (millis() >= next)
-    { //timer interval for keepalive
+    { // timer interval for keepalive
         Serial.write("\\####RealSimGear#mrusk-G1000XFD1#1#");
         Serial.write(VERSION);
         Serial.write("#");
@@ -272,6 +337,11 @@ void loop()
         next = millis() + 500;
     }
 
+#if UNIT_PFD == 0
+    // handle analog inputs
+    handlePoti();
+#endif
+
 #if DEBUG
     count++;
 #endif
@@ -281,10 +351,8 @@ void loop()
     handleLEDs();
 #endif
 
-    // scan Multiplexers into virtual inputs
-    handleMux();
-
     uint8_t btn = 0;
+    uint8_t sw = 0;
     uint8_t enc = 0;
     // MUX 0
     handleButton(&Buttons[btn++], "BTN_NAV_TOG", false, getBit(mux1[0], 0));
@@ -367,11 +435,41 @@ void loop()
     handleEncoder(&Encoders[enc++], "ENC_HDG_UP", "ENC_HDG_DN", getBit(mux1[12], 4), getBit(mux1[13], 4), 4);
     handleButton(&Buttons[btn++], "BTN_HDG_SYNC", false, getBit(mux1[14], 4));
 
+#if UNIT_PFD == 1
+    sw++; // to avoid warning
+#endif
+
+#if UNIT_PFD == 0
+    handleButton(&Buttons[btn++], "BTN_TRIM_CENTER", false, getBit(mux1[10], 4));
+    handleEncoder(&Encoders[enc++], "ENC_TRIM_RIGHT", "ENC_TRIM_LEFT", getBit(mux1[8], 4), getBit(mux1[9], 4), 4);
+    // MUX 5
+    handleSwitch(&Switches[sw++], "SW_LIGHT_LDG", getBit(mux1[0], 5));
+    handleSwitch(&Switches[sw++], "SW_LIGHT_TAXI", getBit(mux1[1], 5));
+    handleSwitch(&Switches[sw++], "SW_LIGHT_POS", getBit(mux1[2], 5));
+    handleSwitch(&Switches[sw++], "SW_LIGHT_STRB", getBit(mux1[3], 5));
+    handleSwitch(&Switches[sw++], "SW_FUEL_L_DN", getBit(mux1[4], 5));
+    handleSwitch(&Switches[sw++], "SW_FUEL_L_UP", getBit(mux1[5], 5));
+    handleSwitch(&Switches[sw++], "SW_FUEL_R_DN", getBit(mux1[6], 5));
+    handleSwitch(&Switches[sw++], "SW_FUEL_R_UP", getBit(mux1[7], 5));
+    handleSwitch(&Switches[sw++], "SW_FUEL_AUX_L", getBit(mux1[8], 5));
+    handleSwitch(&Switches[sw++], "SW_FUEL_AUX_R", getBit(mux1[9], 5));
+    handleButton(&Buttons[btn++], "BUT_GEAR_TEST", false, getBit(mux1[10], 5));
+    handleSwitch(&Switches[sw++], "SW_GEAR", getBit(mux1[11], 5));
+    handleSwitch(&Switches[sw++], "SW_FLAP_DN", getBit(mux1[12], 5));
+    handleSwitch(&Switches[sw++], "SW_FLAP_UP", getBit(mux1[13], 5));
+#endif
+
 #if DEBUG
     // halt program in case of error since memory is corrupted
     if (btn > MAX_BUTTONS)
     {
         Serial.println("ERROR: Too many buttons used");
+        while (true)
+            ;
+    }
+    if (sw > MAX_SWITCHES)
+    {
+        Serial.println("ERROR: Too many Switches used");
         while (true)
             ;
     }
