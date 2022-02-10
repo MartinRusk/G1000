@@ -10,7 +10,6 @@
 // Select unit
 #if XFD_UNIT == 1
 #define BOARD_ID "0001"
-// autopilot layout (set both to 0 if no AP connected)
 #define AP_NXI 0
 #define AP_STD 0
 #define LEFT_PANEL 1
@@ -21,7 +20,6 @@
 #define DM13A_LAT 12
 #elif XFD_UNIT == 2
 #define BOARD_ID "0002"
-// autopilot layout (set both to 0 if no AP connected)
 #define AP_NXI 1
 #define AP_STD 0
 #define LEFT_PANEL 0
@@ -36,7 +34,6 @@
 #define AP_STD 1
 #define LEFT_PANEL 0
 #define RIGHT_PANEL 0
-// pins for LED driver
 #define NUM_LEDS 0
 #define DM13A_DAI 10
 #define DM13A_DCK 13
