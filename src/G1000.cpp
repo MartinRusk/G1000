@@ -2,8 +2,10 @@
 #include "Arduino.h"
 
 // configuration
-#define VERSION "1.3.3"
+#define VERSION "1.3.4"
 #define UNIT_PFD 1
+// printout debug data
+#define DEBUG 0
 
 // Select unit
 #if UNIT_PFD
@@ -22,13 +24,11 @@
 #define NUM_LEDS 7
 #endif
 
-// printout debug data
-#define DEBUG 0
 // reserve space for input devices
-#define MAX_BUTTONS 47
-#define MAX_SWITCHES 13
+#define MAX_BUTTONS 50
+#define MAX_SWITCHES 20
 #define MAX_ENCODERS 15
-// optional if LED outputs are connected
+// pins for LED driver
 #define DM13A_DAI 10
 #define DM13A_DCK 13
 #define DM13A_LAT 12
@@ -56,6 +56,7 @@ uint32_t next = 0;
 #if DEBUG
 // counter to check runtime behavior
 uint16_t count = 0;
+bool init_mark = false;
 #endif
 
 // setup multiplexer pins as outputs
@@ -80,15 +81,14 @@ void handleMux()
     for (uint8_t channel = 0; channel < 16; channel++)
     {
 #ifdef ARDUINO_AVR_NANO
-        digitalWrite(4, channel & 1);
-        digitalWrite(5, channel & 2);
-        digitalWrite(2, channel & 4);
-        digitalWrite(3, channel & 8);
-        for (uint8_t i = 0; i < 100; i++)
-            ;
+        // remap pins 0+1 to 4+5 due to bug on PCB
+        PORTD = (PIND & 0xc3) | (channel & 0x0c) | ((channel & 0x3) << 4);;
+        delayMicroseconds(4);
         mux1[channel] = (~PINC & 0x3F);
         mux2[channel] = (~PINB & 0x3F);
 #else
+        // TODO: Rewrite write and read for direct port manipulation
+        // PORTA = (PINA & 0xF0) | channel; // TODO: verify port
         digitalWrite(22, channel & 1);
         digitalWrite(23, channel & 2);
         digitalWrite(24, channel & 4);
@@ -100,6 +100,7 @@ void handleMux()
         {
             // invert signal here b/c switches are pull down
             // mux inputs start at PIN26
+            // __BUILTIN_AVR_INSERT_BITS (0x01234567, bits, 0); // flip bit order
             mux1[channel] |= !digitalRead(input + 26) << input;
             mux2[channel] |= !digitalRead(input + 32) << input;
         }
@@ -229,11 +230,10 @@ void setupLEDs()
     pinMode(DM13A_DAI, OUTPUT);
     digitalWrite(DM13A_LAT, LOW);
     digitalWrite(DM13A_DAI, LOW);
-    uint16_t leds = 0;
+    // init loop thru all LEDs
     for (uint8_t i = 0; i < NUM_LEDS; ++i)
     {
-        leds = (1 << i);
-        writeLEDs(leds);
+        writeLEDs(1 << i);
         delay(100);
     }
     writeLEDs(0x0000);
@@ -331,6 +331,7 @@ void loop()
         Serial.write("\n");
 #if DEBUG
         // print out number of cycles per 500ms to verify runtime
+        Serial.write("Loop count: ");
         Serial.println(count);
         count = 0;
 #endif
@@ -436,7 +437,10 @@ void loop()
     handleButton(&Buttons[btn++], "BTN_HDG_SYNC", false, getBit(mux1[14], 4));
 
 #if UNIT_PFD == 1
-    sw++; // to avoid warning
+    handleSwitch(&Switches[sw++], "SW_MASTER", getBit(mux1[0], 5));
+    handleSwitch(&Switches[sw++], "SW_AV_MASTER", getBit(mux1[1], 5));
+    handleSwitch(&Switches[sw++], "SW_PITOT", getBit(mux1[2], 5));
+    handleSwitch(&Switches[sw++], "SW_BRAKE", getBit(mux1[3], 5));
 #endif
 
 #if UNIT_PFD == 0
@@ -460,6 +464,17 @@ void loop()
 #endif
 
 #if DEBUG
+    // show number of used input devices
+    if (!init_mark)
+    {
+        init_mark = true;
+        Serial.print("Buttons:  ");
+        Serial.println(btn);
+        Serial.print("Switches: ");
+        Serial.println(sw);
+        Serial.print("Encoders: ");
+        Serial.println(enc);
+    }
     // halt program in case of error since memory is corrupted
     if (btn > MAX_BUTTONS)
     {
