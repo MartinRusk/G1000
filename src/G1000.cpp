@@ -55,8 +55,8 @@ struct poti_t
 } Potis[MAX_POTIS];
 
 // storage for virtual inputs from MUX
-uint8_t mux1[16];
-uint8_t mux2[16];
+// packed format to save memory space
+uint16_t Mux[16];
 // keep alive timer
 uint32_t next = 0;
 #if DEBUG
@@ -69,56 +69,45 @@ bool init_mark = false;
 void setupMux()
 {
 #ifdef ARDUINO_AVR_NANO
-    pinMode(2, OUTPUT);
-    pinMode(3, OUTPUT);
-    pinMode(4, OUTPUT);
-    pinMode(5, OUTPUT);
+    // set bits 2-5 Port D to output for mux adress (Pin 2-5)
+    DDRD = (DDRD & 0xfc) | 0x3c;
 #else
-    pinMode(22, OUTPUT);
-    pinMode(23, OUTPUT);
-    pinMode(24, OUTPUT);
-    pinMode(25, OUTPUT);
+    // set bits 0-3 Port A to output for mux adress (Pin 22-25)
+    DDRA = 0x0f;
 #endif
 }
 // scan all multiplexers simultaneously into virtual inputs
 void handleMux()
 {
+    // loop over all pins
     for (uint8_t pin = 0; pin < 16; pin++)
     {
 #ifdef ARDUINO_AVR_NANO
         // remap pins 0+1 to 4+5 due to bug on PCB
-        PORTD = (PIND & 0xc3) | (pin & 0x0c) | ((pin & 0x3) << 4);
+        PORTD = (PIND & 0xc3) | (pin & 0x0c) | ((pin & 0x03) << 4);
         // delay to settle mux and avoid bouncing
         delayMicroseconds(10);
-        mux1[pin] = (~PINC & 0x3F);
-        mux2[pin] = (~PINB & 0x3F);
+        // join inputs from all boards into channels
+        // P1 and P2 are exchanged on HAT board
+        Mux[pin] = (~PINC & 0x3F); // | (int16_t)(~PINB & 0x3F) << 6;
 #else
-        // TODO: Rewrite write and read for direct port manipulation
-        // PORTA = (PINA & 0xF0) | pin; // TODO: verify port
-        digitalWrite(22, pin & 1);
-        digitalWrite(23, pin & 2);
-        digitalWrite(24, pin & 4);
-        digitalWrite(25, pin & 8);
-        mux1[pin] = 0;
-        mux2[pin] = 0;
-        // scan all physical inputs into virtual inputs
-        for (uint8_t input = 0; input < 6; input++)
-        {
-            // invert signal here b/c switches are pull down
-            // mux inputs start at PIN26
-            // __BUILTIN_AVR_INSERT_BITS (0x01234567, bits, 0); // flip bit order
-            mux1[pin] |= !digitalRead(input + 26) << input;
-            mux2[pin] |= !digitalRead(input + 32) << input;
-        }
+        PORTA = (PINA & 0xF0) | pin;
+        // delay to settle mux and avoid bouncing
+        delayMicroseconds(10);
+        // scan inputs from first two Mux boards (P1 & P2)
+        //     MSB                 LSB
+        // P1: PC6 PC7 PA7 PA6 PA5 PA4
+        // P2: PC0 PC1 PC2 PC3 PC4 PC5
+        Mux[pin] = ((PINA & 0xF0) > 4) | (__builtin_avr_insert_bits(0x01234567, PINC, 0) << 4);
 #endif
     }
 }
 // get state of a specific input pin
-bool getMux(uint8_t *mux, uint8_t channel, uint8_t pin)
+bool getMux(uint16_t *mux, uint8_t module, uint8_t pin)
 {
-    // channel: mux module (0-5)
-    // pin: pin of the module (0-15)
-    return ((mux[pin] >> channel) & 1);
+    // module: mux module (0-11)
+    // pin: pin on the module (0-15)
+    return ((mux[pin] >> module) & 1);
 }
 
 // Buttons
@@ -363,115 +352,114 @@ void loop()
 #pragma GCC diagnostic pop
 
     // MUX 0
-    handleButton(&Buttons[btn++], "BTN_NAV_TOG", false, getMux(mux1, 0, 0));
-    handleEncoder(&Encoders[enc++], "ENC_NAV_INNER_UP", "ENC_NAV_INNER_DN", getMux(mux1, 0, 1), getMux(mux1, 0, 2), 4);
-    handleEncoder(&Encoders[enc++], "ENC_NAV_OUTER_UP", "ENC_NAV_OUTER_DN", getMux(mux1, 0, 4), getMux(mux1, 0, 3), 4);
-    handleButton(&Buttons[btn++], "BTN_COM_TOG", false, getMux(mux1, 0, 5));
-    handleEncoder(&Encoders[enc++], "ENC_COM_INNER_UP", "ENC_COM_INNER_DN", getMux(mux1, 0, 6), getMux(mux1, 0, 7), 4);
-    handleEncoder(&Encoders[enc++], "ENC_COM_OUTER_UP", "ENC_COM_OUTER_DN", getMux(mux1, 0, 9), getMux(mux1, 0, 8), 4);
-    handleButton(&Buttons[btn++], "BTN_CRS_SYNC", false, getMux(mux1, 0, 10));
-    handleEncoder(&Encoders[enc++], "ENC_CRS_UP", "ENC_CRS_DN", getMux(mux1, 0, 11), getMux(mux1, 0, 12), 4);
-    handleEncoder(&Encoders[enc++], "ENC_BARO_UP", "ENC_BARO_DN", getMux(mux1, 0, 14), getMux(mux1, 0, 13), 4);
+    handleButton(&Buttons[btn++], "BTN_NAV_TOG", false, getMux(Mux, 0, 0));
+    handleEncoder(&Encoders[enc++], "ENC_NAV_INNER_UP", "ENC_NAV_INNER_DN", getMux(Mux, 0, 1), getMux(Mux, 0, 2), 4);
+    handleEncoder(&Encoders[enc++], "ENC_NAV_OUTER_UP", "ENC_NAV_OUTER_DN", getMux(Mux, 0, 4), getMux(Mux, 0, 3), 4);
+    handleButton(&Buttons[btn++], "BTN_COM_TOG", false, getMux(Mux, 0, 5));
+    handleEncoder(&Encoders[enc++], "ENC_COM_INNER_UP", "ENC_COM_INNER_DN", getMux(Mux, 0, 6), getMux(Mux, 0, 7), 4);
+    handleEncoder(&Encoders[enc++], "ENC_COM_OUTER_UP", "ENC_COM_OUTER_DN", getMux(Mux, 0, 9), getMux(Mux, 0, 8), 4);
+    handleButton(&Buttons[btn++], "BTN_CRS_SYNC", false, getMux(Mux, 0, 10));
+    handleEncoder(&Encoders[enc++], "ENC_CRS_UP", "ENC_CRS_DN", getMux(Mux, 0, 11), getMux(Mux, 0, 12), 4);
+    handleEncoder(&Encoders[enc++], "ENC_BARO_UP", "ENC_BARO_DN", getMux(Mux, 0, 14), getMux(Mux, 0, 13), 4);
     // MUX 1
-    handleButton(&Buttons[btn++], "BTN_ALT_SEL", false, getMux(mux1, 1, 0));
-    handleEncoder(&Encoders[enc++], "ENC_ALT_INNER_UP", "ENC_ALT_INNER_DN", getMux(mux1, 1, 1), getMux(mux1, 1, 2), 4);
-    handleEncoder(&Encoders[enc++], "ENC_ALT_OUTER_UP", "ENC_ALT_OUTER_DN", getMux(mux1, 1, 4), getMux(mux1, 1, 3), 4);
-    handleButton(&Buttons[btn++], "BTN_FMS", false, getMux(mux1, 1, 5));
-    handleEncoder(&Encoders[enc++], "ENC_FMS_INNER_UP", "ENC_FMS_INNER_DN", getMux(mux1, 1, 6), getMux(mux1, 1, 7), 4);
-    handleEncoder(&Encoders[enc++], "ENC_FMS_OUTER_UP", "ENC_FMS_OUTER_DN", getMux(mux1, 1, 9), getMux(mux1, 1, 8), 4);
-    handleButton(&Buttons[btn++], "BTN_DIRECT", false, getMux(mux1, 1, 10));
-    handleButton(&Buttons[btn++], "BTN_FPL", false, getMux(mux1, 1, 11));
-    handleButton(&Buttons[btn++], "BTN_CLR", false, getMux(mux1, 1, 12));
-    handleButton(&Buttons[btn++], "BTN_MENU", false, getMux(mux1, 1, 13));
-    handleButton(&Buttons[btn++], "BTN_PROC", false, getMux(mux1, 1, 14));
-    handleButton(&Buttons[btn++], "BTN_ENT", false, getMux(mux1, 1, 15));
+    handleButton(&Buttons[btn++], "BTN_ALT_SEL", false, getMux(Mux, 1, 0));
+    handleEncoder(&Encoders[enc++], "ENC_ALT_INNER_UP", "ENC_ALT_INNER_DN", getMux(Mux, 1, 1), getMux(Mux, 1, 2), 4);
+    handleEncoder(&Encoders[enc++], "ENC_ALT_OUTER_UP", "ENC_ALT_OUTER_DN", getMux(Mux, 1, 4), getMux(Mux, 1, 3), 4);
+    handleButton(&Buttons[btn++], "BTN_FMS", false, getMux(Mux, 1, 5));
+    handleEncoder(&Encoders[enc++], "ENC_FMS_INNER_UP", "ENC_FMS_INNER_DN", getMux(Mux, 1, 6), getMux(Mux, 1, 7), 4);
+    handleEncoder(&Encoders[enc++], "ENC_FMS_OUTER_UP", "ENC_FMS_OUTER_DN", getMux(Mux, 1, 9), getMux(Mux, 1, 8), 4);
+    handleButton(&Buttons[btn++], "BTN_DIRECT", false, getMux(Mux, 1, 10));
+    handleButton(&Buttons[btn++], "BTN_FPL", false, getMux(Mux, 1, 11));
+    handleButton(&Buttons[btn++], "BTN_CLR", false, getMux(Mux, 1, 12));
+    handleButton(&Buttons[btn++], "BTN_MENU", false, getMux(Mux, 1, 13));
+    handleButton(&Buttons[btn++], "BTN_PROC", false, getMux(Mux, 1, 14));
+    handleButton(&Buttons[btn++], "BTN_ENT", false, getMux(Mux, 1, 15));
     // MUX 2
 #if AP_NXI
-    handleButton(&Buttons[btn++], "BTN_AP", false, getMux(mux1, 2, 0));
-    handleButton(&Buttons[btn++], "BTN_FD", false, getMux(mux1, 2, 1));
-    handleButton(&Buttons[btn++], "BTN_NAV", false, getMux(mux1, 2, 2));
-    handleButton(&Buttons[btn++], "BTN_ALT", false, getMux(mux1, 2, 3));
-    handleButton(&Buttons[btn++], "BTN_VS", false, getMux(mux1, 2, 4));
-    handleButton(&Buttons[btn++], "BTN_FLC", false, getMux(mux1, 2, 5));
-    handleButton(&Buttons[btn++], "BTN_YD", false, getMux(mux1, 2, 6));
-    handleButton(&Buttons[btn++], "BTN_HDG", false, getMux(mux1, 2, 7));
-    handleButton(&Buttons[btn++], "BTN_APR", false, getMux(mux1, 2, 8));
-    handleButton(&Buttons[btn++], "BTN_VNAV", false, getMux(mux1, 2, 9));
-    handleButton(&Buttons[btn++], "BTN_NOSE_UP", false, getMux(mux1, 2, 10));
-    handleButton(&Buttons[btn++], "BTN_NOSE_DN", false, getMux(mux1, 2, 11));
+    handleButton(&Buttons[btn++], "BTN_AP", false, getMux(Mux, 2, 0));
+    handleButton(&Buttons[btn++], "BTN_FD", false, getMux(Mux, 2, 1));
+    handleButton(&Buttons[btn++], "BTN_NAV", false, getMux(Mux, 2, 2));
+    handleButton(&Buttons[btn++], "BTN_ALT", false, getMux(Mux, 2, 3));
+    handleButton(&Buttons[btn++], "BTN_VS", false, getMux(Mux, 2, 4));
+    handleButton(&Buttons[btn++], "BTN_FLC", false, getMux(Mux, 2, 5));
+    handleButton(&Buttons[btn++], "BTN_YD", false, getMux(Mux, 2, 6));
+    handleButton(&Buttons[btn++], "BTN_HDG", false, getMux(Mux, 2, 7));
+    handleButton(&Buttons[btn++], "BTN_APR", false, getMux(Mux, 2, 8));
+    handleButton(&Buttons[btn++], "BTN_VNAV", false, getMux(Mux, 2, 9));
+    handleButton(&Buttons[btn++], "BTN_NOSE_UP", false, getMux(Mux, 2, 10));
+    handleButton(&Buttons[btn++], "BTN_NOSE_DN", false, getMux(Mux, 2, 11));
 #endif
 #if AP_STD
-    handleButton(&Buttons[btn++], "BTN_AP", false, getMux(mux1, 2, 0));
-    handleButton(&Buttons[btn++], "BTN_HDG", false, getMux(mux1, 2, 1));
-    handleButton(&Buttons[btn++], "BTN_NAV", false, getMux(mux1, 2, 2));
-    handleButton(&Buttons[btn++], "BTN_APR", false, getMux(mux1, 2, 3));
-    handleButton(&Buttons[btn++], "BTN_VS", false, getMux(mux1, 2, 4));
-    handleButton(&Buttons[btn++], "BTN_FLC", false, getMux(mux1, 2, 5));
-    handleButton(&Buttons[btn++], "BTN_FD", false, getMux(mux1, 2, 6));
-    handleButton(&Buttons[btn++], "BTN_ALT", false, getMux(mux1, 2, 7));
-    handleButton(&Buttons[btn++], "BTN_VNAV", false, getMux(mux1, 2, 8));
-    handleButton(&Buttons[btn++], "BTN_BC", false, getMux(mux1, 2, 9));
-    handleButton(&Buttons[btn++], "BTN_NOSE_UP", false, getMux(mux1, 2, 10));
-    handleButton(&Buttons[btn++], "BTN_NOSE_DN", false, getMux(mux1, 2, 11));
+    handleButton(&Buttons[btn++], "BTN_AP", false, getMux(Mux, 2, 0));
+    handleButton(&Buttons[btn++], "BTN_HDG", false, getMux(Mux, 2, 1));
+    handleButton(&Buttons[btn++], "BTN_NAV", false, getMux(Mux, 2, 2));
+    handleButton(&Buttons[btn++], "BTN_APR", false, getMux(Mux, 2, 3));
+    handleButton(&Buttons[btn++], "BTN_VS", false, getMux(Mux, 2, 4));
+    handleButton(&Buttons[btn++], "BTN_FLC", false, getMux(Mux, 2, 5));
+    handleButton(&Buttons[btn++], "BTN_FD", false, getMux(Mux, 2, 6));
+    handleButton(&Buttons[btn++], "BTN_ALT", false, getMux(Mux, 2, 7));
+    handleButton(&Buttons[btn++], "BTN_VNAV", false, getMux(Mux, 2, 8));
+    handleButton(&Buttons[btn++], "BTN_BC", false, getMux(Mux, 2, 9));
+    handleButton(&Buttons[btn++], "BTN_NOSE_UP", false, getMux(Mux, 2, 10));
+    handleButton(&Buttons[btn++], "BTN_NOSE_DN", false, getMux(Mux, 2, 11));
 #endif
-    handleEncoder(&Encoders[enc++], "ENC_NAV_VOL_UP", "ENC_NAV_VOL_DN", getMux(mux1, 2, 12), getMux(mux1, 2, 13), 4);
-    handleButton(&Buttons[btn++], "BTN_NAV_VOL", false, getMux(mux1, 2, 14));
-    handleButton(&Buttons[btn++], "BTN_NAV_FF", false, getMux(mux1, 2, 15));
+    handleEncoder(&Encoders[enc++], "ENC_NAV_VOL_UP", "ENC_NAV_VOL_DN", getMux(Mux, 2, 12), getMux(Mux, 2, 13), 4);
+    handleButton(&Buttons[btn++], "BTN_NAV_VOL", false, getMux(Mux, 2, 14));
+    handleButton(&Buttons[btn++], "BTN_NAV_FF", false, getMux(Mux, 2, 15));
     // MUX 3
-    handleButton(&Buttons[btn++], "BTN_SOFT_1", false, getMux(mux1, 3, 0));
-    handleButton(&Buttons[btn++], "BTN_SOFT_2", false, getMux(mux1, 3, 1));
-    handleButton(&Buttons[btn++], "BTN_SOFT_3", false, getMux(mux1, 3, 2));
-    handleButton(&Buttons[btn++], "BTN_SOFT_4", false, getMux(mux1, 3, 3));
-    handleButton(&Buttons[btn++], "BTN_SOFT_5", false, getMux(mux1, 3, 4));
-    handleButton(&Buttons[btn++], "BTN_SOFT_6", false, getMux(mux1, 3, 5));
-    handleButton(&Buttons[btn++], "BTN_SOFT_7", false, getMux(mux1, 3, 6));
-    handleButton(&Buttons[btn++], "BTN_SOFT_8", false, getMux(mux1, 3, 7));
-    handleButton(&Buttons[btn++], "BTN_SOFT_9", false, getMux(mux1, 3, 8));
-    handleButton(&Buttons[btn++], "BTN_SOFT_10", false, getMux(mux1, 3, 9));
-    handleButton(&Buttons[btn++], "BTN_SOFT_11", false, getMux(mux1, 3, 10));
-    handleButton(&Buttons[btn++], "BTN_SOFT_12", false, getMux(mux1, 3, 11));
-    handleEncoder(&Encoders[enc++], "ENC_COM_VOL_UP", "ENC_COM_VOL_DN", getMux(mux1, 3, 12), getMux(mux1, 3, 13), 4);
-    handleButton(&Buttons[btn++], "BTN_COM_VOL", false, getMux(mux1, 3, 14));
-    handleButton(&Buttons[btn++], "BTN_COM_FF", false, getMux(mux1, 3, 15));
+    handleButton(&Buttons[btn++], "BTN_SOFT_1", false, getMux(Mux, 3, 0));
+    handleButton(&Buttons[btn++], "BTN_SOFT_2", false, getMux(Mux, 3, 1));
+    handleButton(&Buttons[btn++], "BTN_SOFT_3", false, getMux(Mux, 3, 2));
+    handleButton(&Buttons[btn++], "BTN_SOFT_4", false, getMux(Mux, 3, 3));
+    handleButton(&Buttons[btn++], "BTN_SOFT_5", false, getMux(Mux, 3, 4));
+    handleButton(&Buttons[btn++], "BTN_SOFT_6", false, getMux(Mux, 3, 5));
+    handleButton(&Buttons[btn++], "BTN_SOFT_7", false, getMux(Mux, 3, 6));
+    handleButton(&Buttons[btn++], "BTN_SOFT_8", false, getMux(Mux, 3, 7));
+    handleButton(&Buttons[btn++], "BTN_SOFT_9", false, getMux(Mux, 3, 8));
+    handleButton(&Buttons[btn++], "BTN_SOFT_10", false, getMux(Mux, 3, 9));
+    handleButton(&Buttons[btn++], "BTN_SOFT_11", false, getMux(Mux, 3, 10));
+    handleButton(&Buttons[btn++], "BTN_SOFT_12", false, getMux(Mux, 3, 11));
+    handleEncoder(&Encoders[enc++], "ENC_COM_VOL_UP", "ENC_COM_VOL_DN", getMux(Mux, 3, 12), getMux(Mux, 3, 13), 4);
+    handleButton(&Buttons[btn++], "BTN_COM_VOL", false, getMux(Mux, 3, 14));
+    handleButton(&Buttons[btn++], "BTN_COM_FF", false, getMux(Mux, 3, 15));
     // MUX 4
-    handleButton(&Buttons[btn++], "BTN_PAN_SYNC", false, getMux(mux1, 4, 0));
-    handleButton(&Buttons[btn++], "BTN_PAN_UP", true, getMux(mux1, 4, 1));
-    handleButton(&Buttons[btn++], "BTN_PAN_LEFT", true, getMux(mux1, 4, 2));
-    handleButton(&Buttons[btn++], "BTN_PAN_DN", true, getMux(mux1, 4, 3));
-    handleButton(&Buttons[btn++], "BTN_PAN_RIGHT", true, getMux(mux1, 4, 4));
-    handleEncoder(&Encoders[enc++], "ENC_RANGE_UP", "ENC_RANGE_DN", getMux(mux1, 4, 6), getMux(mux1, 4, 5), 2);
-    handleEncoder(&Encoders[enc++], "ENC_HDG_UP", "ENC_HDG_DN", getMux(mux1, 4, 12), getMux(mux1, 4, 13), 4);
-    handleButton(&Buttons[btn++], "BTN_HDG_SYNC", false, getMux(mux1, 4, 14));
+    handleButton(&Buttons[btn++], "BTN_PAN_SYNC", false, getMux(Mux, 4, 0));
+    handleButton(&Buttons[btn++], "BTN_PAN_UP", true, getMux(Mux, 4, 1));
+    handleButton(&Buttons[btn++], "BTN_PAN_LEFT", true, getMux(Mux, 4, 2));
+    handleButton(&Buttons[btn++], "BTN_PAN_DN", true, getMux(Mux, 4, 3));
+    handleButton(&Buttons[btn++], "BTN_PAN_RIGHT", true, getMux(Mux, 4, 4));
+    handleEncoder(&Encoders[enc++], "ENC_RANGE_UP", "ENC_RANGE_DN", getMux(Mux, 4, 6), getMux(Mux, 4, 5), 2);
+    handleEncoder(&Encoders[enc++], "ENC_HDG_UP", "ENC_HDG_DN", getMux(Mux, 4, 12), getMux(Mux, 4, 13), 4);
+    handleButton(&Buttons[btn++], "BTN_HDG_SYNC", false, getMux(Mux, 4, 14));
 
 #if UNIT_PFD == 1
-    // handleSwitch(&Switches[swi++], "SW_MASTER", getMux(mux1, 5, 0));
-    // handleSwitch(&Switches[swi++], "SW_AV_MASTER", getMux(mux1, 5, 1));
-    // handleSwitch(&Switches[swi++], "SW_PITOT", getMux(mux1, 5, 2));
-    // handleSwitch(&Switches[swi++], "SW_BRAKE", getMux(mux1, 5, 3));
+    // handleSwitch(&Switches[swi++], "SW_MASTER", getMux(Mux, 5, 0));
+    // handleSwitch(&Switches[swi++], "SW_AV_MASTER", getMux(Mux, 5, 1));
+    // handleSwitch(&Switches[swi++], "SW_PITOT", getMux(Mux, 5, 2));
+    // handleSwitch(&Switches[swi++], "SW_BRAKE", getMux(Mux, 5, 3));
 #endif
 
 #if UNIT_PFD == 0
-    handleButton(&Buttons[btn++], "BTN_TRIM_CENTER", false, getMux(mux1, 4, 10));
-    handleEncoder(&Encoders[enc++], "ENC_TRIM_RIGHT", "ENC_TRIM_LEFT", getMux(mux1, 4, 8), getMux(mux1, 4, 9), 4);
+    handleButton(&Buttons[btn++], "BTN_TRIM_CENTER", false, getMux(Mux, 4, 10));
+    handleEncoder(&Encoders[enc++], "ENC_TRIM_RIGHT", "ENC_TRIM_LEFT", getMux(Mux, 4, 8), getMux(Mux, 4, 9), 4);
     // MUX 5
-    handleSwitch(&Switches[swi++], "SW_LIGHT_LDG", getMux(mux1, 5, 0));
-    handleSwitch(&Switches[swi++], "SW_LIGHT_TAXI", getMux(mux1, 5, 1));
-    handleSwitch(&Switches[swi++], "SW_LIGHT_POS", getMux(mux1, 5, 2));
-    handleSwitch(&Switches[swi++], "SW_LIGHT_STRB", getMux(mux1, 5, 3));
-    handleSwitch(&Switches[swi++], "SW_FUEL_L_DN", getMux(mux1, 5, 4));
-    handleSwitch(&Switches[swi++], "SW_FUEL_L_UP", getMux(mux1, 5, 5));
-    handleSwitch(&Switches[swi++], "SW_FUEL_R_DN", getMux(mux1, 5, 6));
-    handleSwitch(&Switches[swi++], "SW_FUEL_R_UP", getMux(mux1, 5, 7));
-    handleSwitch(&Switches[swi++], "SW_FUEL_AUX_L", getMux(mux1, 5, 8));
-    handleSwitch(&Switches[swi++], "SW_FUEL_AUX_R", getMux(mux1, 5, 9));
-    handleButton(&Buttons[btn++], "BUT_GEAR_TEST", false, getMux(mux1, 5, 10));
-    handleSwitch(&Switches[swi++], "SW_GEAR", getMux(mux1, 5, 11));
-    handleSwitch(&Switches[swi++], "SW_FLAP_DN", getMux(mux1, 5, 12));
-    handleSwitch(&Switches[swi++], "SW_FLAP_UP", getMux(mux1, 5, 13));
+    handleSwitch(&Switches[swi++], "SW_LIGHT_LDG", getMux(Mux, 5, 0));
+    handleSwitch(&Switches[swi++], "SW_LIGHT_TAXI", getMux(Mux, 5, 1));
+    handleSwitch(&Switches[swi++], "SW_LIGHT_POS", getMux(Mux, 5, 2));
+    handleSwitch(&Switches[swi++], "SW_LIGHT_STRB", getMux(Mux, 5, 3));
+    handleSwitch(&Switches[swi++], "SW_FUEL_L_DN", getMux(Mux, 5, 4));
+    handleSwitch(&Switches[swi++], "SW_FUEL_L_UP", getMux(Mux, 5, 5));
+    handleSwitch(&Switches[swi++], "SW_FUEL_R_DN", getMux(Mux, 5, 6));
+    handleSwitch(&Switches[swi++], "SW_FUEL_R_UP", getMux(Mux, 5, 7));
+    handleSwitch(&Switches[swi++], "SW_FUEL_AUX_L", getMux(Mux, 5, 8));
+    handleSwitch(&Switches[swi++], "SW_FUEL_AUX_R", getMux(Mux, 5, 9));
+    handleButton(&Buttons[btn++], "BUT_GEAR_TEST", false, getMux(Mux, 5, 10));
+    handleSwitch(&Switches[swi++], "SW_GEAR", getMux(Mux, 5, 11));
+    handleSwitch(&Switches[swi++], "SW_FLAP_DN", getMux(Mux, 5, 12));
+    handleSwitch(&Switches[swi++], "SW_FLAP_UP", getMux(Mux, 5, 13));
     // analog inputs
     handlePoti(&Potis[pot++], "SW_INSTR", analogRead(6));
     handlePoti(&Potis[pot++], "SW_FLOOD", analogRead(7));
-
 #endif
 
 #if DEBUG
