@@ -3,23 +3,44 @@
 
 // configuration
 #define VERSION "1.3.5"
-#define UNIT_PFD 1
+#define XFD_UNIT 1
 // printout debug data
 #define DEBUG 0
 
 // Select unit
-#if UNIT_PFD
+#if XFD_UNIT == 1
 #define BOARD_ID "0001"
 // autopilot layout (set both to 0 if no AP connected)
 #define AP_NXI 0
 #define AP_STD 0
+#define LEFT_PANEL 1
+#define RIGHT_PANEL 0
 #define NUM_LEDS 3
-#else
+#define DM13A_DAI 10
+#define DM13A_DCK 13
+#define DM13A_LAT 12
+#elif XFD_UNIT == 2
 #define BOARD_ID "0002"
 // autopilot layout (set both to 0 if no AP connected)
 #define AP_NXI 1
 #define AP_STD 0
+#define LEFT_PANEL 0
+#define RIGHT_PANEL 1
 #define NUM_LEDS 7
+#define DM13A_DAI 10
+#define DM13A_DCK 13
+#define DM13A_LAT 12
+#else
+#define BOARD_ID "0003"
+#define AP_NXI 0
+#define AP_STD 1
+#define LEFT_PANEL 0
+#define RIGHT_PANEL 0
+// pins for LED driver
+#define NUM_LEDS 0
+#define DM13A_DAI 10
+#define DM13A_DCK 13
+#define DM13A_LAT 12
 #endif
 
 // reserve space for input devices
@@ -27,10 +48,6 @@
 #define MAX_SWITCHES 20
 #define MAX_ENCODERS 15
 #define MAX_POTIS 2
-// pins for LED driver
-#define DM13A_DAI 10
-#define DM13A_DCK 13
-#define DM13A_LAT 12
 
 // storage for input devices
 struct button_t
@@ -98,7 +115,7 @@ void handleMux()
         //     MSB                 LSB
         // P1: PC6 PC7 PA7 PA6 PA5 PA4
         // P2: PC0 PC1 PC2 PC3 PC4 PC5
-        Mux[pin] = ((PINA & 0xF0) > 4) | (__builtin_avr_insert_bits(0x01234567, PINC, 0) << 4);
+        Mux[pin] = ((~PINA & 0xF0) >> 4) | (__builtin_avr_insert_bits(0x01234567, ~PINC, 0) << 4);
 #endif
     }
 }
@@ -153,7 +170,7 @@ void handleSwitch(switch_t *swi, const char *name, bool input)
     {
         Serial.write(name);
         Serial.write(".SW.ON\n");
-    }    
+    }
     if (!input && swi->_state)
     {
         Serial.write(name);
@@ -432,14 +449,14 @@ void loop()
     handleEncoder(&Encoders[enc++], "ENC_HDG_UP", "ENC_HDG_DN", getMux(Mux, 4, 12), getMux(Mux, 4, 13), 4);
     handleButton(&Buttons[btn++], "BTN_HDG_SYNC", false, getMux(Mux, 4, 14));
 
-#if UNIT_PFD == 1
+#if LEFT_PANEL
     // handleSwitch(&Switches[swi++], "SW_MASTER", getMux(Mux, 5, 0));
     // handleSwitch(&Switches[swi++], "SW_AV_MASTER", getMux(Mux, 5, 1));
     // handleSwitch(&Switches[swi++], "SW_PITOT", getMux(Mux, 5, 2));
     // handleSwitch(&Switches[swi++], "SW_BRAKE", getMux(Mux, 5, 3));
 #endif
 
-#if UNIT_PFD == 0
+#if RIGHT_PANEL
     handleButton(&Buttons[btn++], "BTN_TRIM_CENTER", false, getMux(Mux, 4, 10));
     handleEncoder(&Encoders[enc++], "ENC_TRIM_RIGHT", "ENC_TRIM_LEFT", getMux(Mux, 4, 8), getMux(Mux, 4, 9), 4);
     // MUX 5
