@@ -447,10 +447,31 @@ void loop()
     handleButton(&Buttons[btn++], "BTN_HDG_SYNC", false, getMux(Mux, 4, 14));
 
 #if LEFT_PANEL
-    // handleSwitch(&Switches[swi++], "SW_MASTER", getMux(Mux, 5, 0));
-    // handleSwitch(&Switches[swi++], "SW_AV_MASTER", getMux(Mux, 5, 1));
-    // handleSwitch(&Switches[swi++], "SW_PITOT", getMux(Mux, 5, 2));
-    // handleSwitch(&Switches[swi++], "SW_BRAKE", getMux(Mux, 5, 3));
+    handleSwitch(&Switches[swi++], "SW_MASTER", getMux(Mux, 2, 0));
+    handleSwitch(&Switches[swi++], "SW_AV_MASTER", getMux(Mux, 2, 1));
+    handleSwitch(&Switches[swi++], "SW_PITOT", getMux(Mux, 2, 2));
+    handleSwitch(&Switches[swi++], "SW_BRAKE", getMux(Mux, 2, 3));
+    handleButton(&Buttons[btn++], "BTN_DEICE_MAX", false, getMux(Mux, 2, 5));
+    handleSwitch(&Switches[swi++], "SW_DEICE_HIGH", getMux(Mux, 2, 6));
+    handleSwitch(&Switches[swi++], "SW_DEICE_OFF", getMux(Mux, 2, 7));
+    handleButton(&Buttons[btn++], "BTN_DEICE_WS", false, getMux(Mux, 2, 8));
+    handleSwitch(&Switches[swi++], "SW_DEICE_LIGHT", getMux(Mux, 2, 9));
+    handleSwitch(&Switches[swi++], "SW_DEICE_ANN", getMux(Mux, 2, 10));
+    handleSwitch(&Switches[swi++], "SW_DEICE_BAK", getMux(Mux, 2, 11));
+    handleSwitch(&Switches[swi++], "SW_ALT_L", getMux(Mux, 5, 0));
+    handleButton(&Buttons[btn++], "BTN_START_L", false, getMux(Mux, 5, 1));
+    handleButton(&Buttons[btn++], "BTN_START_R", false, getMux(Mux, 5, 2));
+    handleSwitch(&Switches[swi++], "SW_ALT_R", getMux(Mux, 5, 3));
+    handleSwitch(&Switches[swi++], "SW_PUMP_L", getMux(Mux, 5, 4));
+    handleSwitch(&Switches[swi++], "SW_ENGINE_MASTER_L", getMux(Mux, 5, 5));
+    handleSwitch(&Switches[swi++], "SW_ENGINE_MASTER_R", getMux(Mux, 5, 6));
+    handleSwitch(&Switches[swi++], "SW_PUMP_R", getMux(Mux, 5, 7));
+    handleSwitch(&Switches[swi++], "SW_VOTE_L_A", getMux(Mux, 5, 8));
+    handleSwitch(&Switches[swi++], "SW_VOTE_L_B", getMux(Mux, 5, 9));
+    handleButton(&Buttons[btn++], "BTN_ECU_TEST_L", false, getMux(Mux, 5, 10));
+    handleButton(&Buttons[btn++], "BTN_ECU_TEST_R", false, getMux(Mux, 5, 11));
+    handleSwitch(&Switches[swi++], "SW_VOTE_R_A", getMux(Mux, 5, 12));
+    handleSwitch(&Switches[swi++], "SW_VOTE_L_B", getMux(Mux, 5, 13));
 #endif
 
 #if RIGHT_PANEL
