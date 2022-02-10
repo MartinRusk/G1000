@@ -2,8 +2,8 @@
 #include "Arduino.h"
 
 // configuration
-#define VERSION "1.3.5"
-#define XFD_UNIT 1
+#define VERSION "1.3.6"
+#define XFD_UNIT 2
 // printout debug data
 #define DEBUG 0
 
@@ -437,11 +437,11 @@ void loop()
     handleButton(&Buttons[btn++], "BTN_COM_VOL", false, getMux(Mux, 3, 14));
     handleButton(&Buttons[btn++], "BTN_COM_FF", false, getMux(Mux, 3, 15));
     // MUX 4
-    handleButton(&Buttons[btn++], "BTN_PAN_SYNC", false, getMux(Mux, 4, 0));
-    handleButton(&Buttons[btn++], "BTN_PAN_UP", true, getMux(Mux, 4, 1));
-    handleButton(&Buttons[btn++], "BTN_PAN_LEFT", true, getMux(Mux, 4, 2));
-    handleButton(&Buttons[btn++], "BTN_PAN_DN", true, getMux(Mux, 4, 3));
-    handleButton(&Buttons[btn++], "BTN_PAN_RIGHT", true, getMux(Mux, 4, 4));
+    handleButton(&Buttons[btn++], "BTN_PAN_SYNC", false, getMux(Mux, 4, 0) && !getMux(Mux, 4, 1) && !getMux(Mux, 4, 2) && !getMux(Mux, 4, 3) && !getMux(Mux, 4, 4) );
+    handleButton(&Buttons[btn++], "BTN_PAN_UP", true, getMux(Mux, 4, 0) && getMux(Mux, 4, 1));
+    handleButton(&Buttons[btn++], "BTN_PAN_LEFT", true, getMux(Mux, 4, 0) && getMux(Mux, 4, 2));
+    handleButton(&Buttons[btn++], "BTN_PAN_DN", true, getMux(Mux, 4, 0) && getMux(Mux, 4, 3));
+    handleButton(&Buttons[btn++], "BTN_PAN_RIGHT", true, getMux(Mux, 4, 0) && getMux(Mux, 4, 4));
     handleEncoder(&Encoders[enc++], "ENC_RANGE_UP", "ENC_RANGE_DN", getMux(Mux, 4, 6), getMux(Mux, 4, 5), 2);
     handleEncoder(&Encoders[enc++], "ENC_HDG_UP", "ENC_HDG_DN", getMux(Mux, 4, 12), getMux(Mux, 4, 13), 4);
     handleButton(&Buttons[btn++], "BTN_HDG_SYNC", false, getMux(Mux, 4, 14));
