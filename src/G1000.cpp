@@ -465,6 +465,7 @@ void loop()
     handleSwitch(&Switches[swi++], "SW_DEICE_LIGHT", getMux(Mux, 2, 9));
     handleSwitch(&Switches[swi++], "SW_DEICE_ANN", getMux(Mux, 2, 10));
     handleSwitch(&Switches[swi++], "SW_DEICE_BAK", getMux(Mux, 2, 11));
+    // MUX 5
     handleSwitch(&Switches[swi++], "SW_ALT_L", getMux(Mux, 5, 0));
     handleButton(&Buttons[btn++], "BTN_START_L", single, getMux(Mux, 5, 1));
     handleButton(&Buttons[btn++], "BTN_START_R", single, getMux(Mux, 5, 2));
@@ -478,7 +479,7 @@ void loop()
     handleButton(&Buttons[btn++], "BTN_ECU_TEST_L", single, getMux(Mux, 5, 10));
     handleButton(&Buttons[btn++], "BTN_ECU_TEST_R", single, getMux(Mux, 5, 11));
     handleSwitch(&Switches[swi++], "SW_VOTE_R_A", getMux(Mux, 5, 12));
-    handleSwitch(&Switches[swi++], "SW_VOTE_L_B", getMux(Mux, 5, 13));
+    handleSwitch(&Switches[swi++], "SW_VOTE_R_B", getMux(Mux, 5, 13));
 #endif
 
 #if RIGHT_PANEL
