@@ -2,7 +2,7 @@
 #include "Arduino.h"
 
 // configuration
-#define VERSION "1.3.6"
+#define VERSION "1.3.7"
 #define XFD_UNIT 1
 // printout debug data
 #define DEBUG 0
@@ -188,7 +188,6 @@ void handleSwitch(switch_t *swi, const char *name, bool input)
 void initEncoder(encoder_t *enc)
 {
     enc->_count = 0;
-    enc->_mark = 0;
     enc->_state = 0;
 }
 void handleEncoder(encoder_t *enc, const char *up, const char *dn, bool input1, bool input2, uint8_t pulses)
@@ -224,17 +223,17 @@ void handleEncoder(encoder_t *enc, const char *up, const char *dn, bool input1, 
         break;
     }
     // evaluate counter with individual pulses per detent
-    if ((enc->_count - enc->_mark) >= pulses)
+    if (enc->_count >= pulses)
     {
         Serial.write(up);
         Serial.write("\n");
-        enc->_mark = enc->_count;
+        enc->_count -= pulses;
     }
-    if ((enc->_count - enc->_mark) <= -pulses)
+    if (enc->_count <= -pulses)
     {
         Serial.write(dn);
         Serial.write("\n");
-        enc->_mark = enc->_count;
+        enc->_count += pulses;
     }
 }
 
