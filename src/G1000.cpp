@@ -2,7 +2,7 @@
 #include "Arduino.h"
 
 // configuration
-#define VERSION "1.3.7"
+#define VERSION "1.3.8"
 #define XFD_UNIT 1
 // printout debug data
 #define DEBUG 0
@@ -47,16 +47,17 @@
 #define MAX_POTIS 2
 // delay for repeating buttons
 #define REPEAT_DELAY 150
+#define DEBOUNCE_DELAY 50
 
 // storage for input devices
 struct button_t
 {
-    bool _state;
+    uint8_t _state;
 } Buttons[MAX_BUTTONS];
 
 struct switch_t
 {
-    bool _state;
+    uint8_t _state;
 } Switches[MAX_SWITCHES];
 
 struct encoder_t
@@ -107,15 +108,15 @@ void handleMux()
 #ifdef ARDUINO_AVR_NANO
         // remap pins 0+1 to 4+5 due to bug on PCB
         PORTD = (PIND & 0xc3) | (pin & 0x0c) | ((pin & 0x03) << 4);
-        // delay to settle mux and avoid bouncing
-        delayMicroseconds(10);
+        // delay to settle mux 
+        delayMicroseconds(5);
         // join inputs from all boards into channels
         // P1 and P2 are exchanged on HAT board
         Mux[pin] = (~PINC & 0x3F); // | (int16_t)(~PINB & 0x3F) << 6;
 #else
         PORTA = (PINA & 0xF0) | pin;
-        // delay to settle mux and avoid bouncing
-        delayMicroseconds(10);
+        // delay to settle mux 
+        delayMicroseconds(5);
         // scan inputs from first two Mux boards (P1 & P2)
         //     MSB                 LSB
         // P1: PC6 PC7 PA7 PA6 PA5 PA4
@@ -135,15 +136,10 @@ bool getMux(uint16_t *mux, uint8_t module, uint8_t pin)
 // Buttons
 void initButton(button_t *but)
 {
-    but->_state = false;
+    but->_state = 0;
 }
 void handleButton(button_t *but, const char *name, repeat_t rep, bool input)
 {
-    if (!input && but->_state)
-    {
-        Serial.write(name);
-        Serial.write("=0\n");
-    }
     if (rep == repeat)
     {
         if (input)
@@ -151,37 +147,49 @@ void handleButton(button_t *but, const char *name, repeat_t rep, bool input)
             Serial.write(name);
             Serial.write("=1\n");
             delay(REPEAT_DELAY);
+            but->_state = DEBOUNCE_DELAY;
         }
     }
     else
     {
-        if (input && !but->_state)
+        if (input && (but->_state == 0))
         {
             Serial.write(name);
             Serial.write("=1\n");
+            but->_state = DEBOUNCE_DELAY;
         }
     }
-    but->_state = input;
+    if (!input && (but->_state > 0))
+    {
+        if (--but->_state == 0)
+        {
+            Serial.write(name);
+            Serial.write("=0\n");
+        }
+    }
 }
 
 // Switches
 void initSwitch(switch_t *swi)
 {
-    swi->_state = false;
+    swi->_state = 0;
 }
 void handleSwitch(switch_t *swi, const char *name, bool input)
 {
-    if (input && !swi->_state)
+    if (input && (swi->_state == 0))
     {
         Serial.write(name);
         Serial.write(".SW.ON\n");
+        swi->_state = DEBOUNCE_DELAY;
     }
-    if (!input && swi->_state)
+    if (!input && (swi->_state > 0))
     {
-        Serial.write(name);
-        Serial.write(".SW.OFF\n");
+        if (--swi->_state == 0)
+        {
+            Serial.write(name);
+            Serial.write(".SW.OFF\n");
+        }
     }
-    swi->_state = input;
 }
 
 // Encoders
