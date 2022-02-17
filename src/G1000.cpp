@@ -15,8 +15,8 @@
 #define LEFT_PANEL 1
 #define RIGHT_PANEL 0
 #define NUM_LEDS 3
-#define DM13A_DAI 10
-#define DM13A_DCK 13
+#define DM13A_DAI 8
+#define DM13A_DCK 10
 #define DM13A_LAT 12
 #elif XFD_UNIT == 2
 #define BOARD_ID "0002"
