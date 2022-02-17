@@ -108,14 +108,14 @@ void handleMux()
 #ifdef ARDUINO_AVR_NANO
         // remap pins 0+1 to 4+5 due to bug on PCB
         PORTD = (PIND & 0xc3) | (pin & 0x0c) | ((pin & 0x03) << 4);
-        // delay to settle mux 
+        // delay to settle mux
         delayMicroseconds(5);
         // join inputs from all boards into channels
         // P1 and P2 are exchanged on HAT board
         Mux[pin] = (~PINC & 0x3F); // | (int16_t)(~PINB & 0x3F) << 6;
 #else
         PORTA = (PINA & 0xF0) | pin;
-        // delay to settle mux 
+        // delay to settle mux
         delayMicroseconds(5);
         // scan inputs from first two Mux boards (P1 & P2)
         //     MSB                 LSB
@@ -452,7 +452,7 @@ void loop()
     handleButton(&Buttons[btn++], "BTN_COM_VOL", single, getMux(Mux, 3, 14));
     handleButton(&Buttons[btn++], "BTN_COM_FF", single, getMux(Mux, 3, 15));
     // MUX 4
-    handleButton(&Buttons[btn++], "BTN_PAN_SYNC", single, getMux(Mux, 4, 0) && !getMux(Mux, 4, 1) && !getMux(Mux, 4, 2) && !getMux(Mux, 4, 3) && !getMux(Mux, 4, 4) );
+    handleButton(&Buttons[btn++], "BTN_PAN_SYNC", single, getMux(Mux, 4, 0) && !getMux(Mux, 4, 1) && !getMux(Mux, 4, 2) && !getMux(Mux, 4, 3) && !getMux(Mux, 4, 4));
     handleButton(&Buttons[btn++], "BTN_PAN_UP", repeat, getMux(Mux, 4, 0) && getMux(Mux, 4, 1));
     handleButton(&Buttons[btn++], "BTN_PAN_LEFT", repeat, getMux(Mux, 4, 0) && getMux(Mux, 4, 2));
     handleButton(&Buttons[btn++], "BTN_PAN_DN", repeat, getMux(Mux, 4, 0) && getMux(Mux, 4, 3));
@@ -514,43 +514,42 @@ void loop()
 #endif
 
 #if DEBUG
-    // show number of used input devices
+    // show number of used input devices and halt program in case of error since memory is corrupted
     if (!init_mark)
     {
         init_mark = true;
         Serial.print("Buttons:  ");
         Serial.println(btn);
+        if (btn > MAX_BUTTONS)
+        {
+            Serial.println("ERROR: Too many buttons used");
+            while (true)
+                ;
+        }
         Serial.print("Switches: ");
         Serial.println(swi);
+        if (swi > MAX_SWITCHES)
+        {
+            Serial.println("ERROR: Too many Switches used");
+            while (true)
+                ;
+        }
         Serial.print("Encoders: ");
         Serial.println(enc);
+        if (enc > MAX_ENCODERS)
+        {
+            Serial.println("ERROR: Too many encoders used");
+            while (true)
+                ;
+        }
         Serial.print("Potis:    ");
         Serial.println(pot);
-    }
-    // halt program in case of error since memory is corrupted
-    if (btn > MAX_BUTTONS)
-    {
-        Serial.println("ERROR: Too many buttons used");
-        while (true)
-            ;
-    }
-    if (swi > MAX_SWITCHES)
-    {
-        Serial.println("ERROR: Too many Switches used");
-        while (true)
-            ;
-    }
-    if (enc > MAX_ENCODERS)
-    {
-        Serial.println("ERROR: Too many encoders used");
-        while (true)
-            ;
-    }
-    if (pot > MAX_POTIS)
-    {
-        Serial.println("ERROR: Too many potis used");
-        while (true)
-            ;
+        if (pot > MAX_POTIS)
+        {
+            Serial.println("ERROR: Too many potis used");
+            while (true)
+                ;
+        }
     }
 #endif
 }
