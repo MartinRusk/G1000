@@ -2,7 +2,7 @@
 #include "Arduino.h"
 
 // configuration
-#define VERSION "1.3.8"
+#define VERSION "1.3.9"
 #define XFD_UNIT 1
 // printout debug data
 #define DEBUG 0
@@ -14,6 +14,10 @@
 #define AP_STD 0
 #define LEFT_PANEL 1
 #define RIGHT_PANEL 0
+#define MAX_BUTTONS 50
+#define MAX_SWITCHES 20
+#define MAX_ENCODERS 15
+#define MAX_POTIS 2
 #define NUM_LEDS 3
 #define DM13A_DAI 8
 #define DM13A_DCK 10
@@ -24,6 +28,10 @@
 #define AP_STD 0
 #define LEFT_PANEL 0
 #define RIGHT_PANEL 1
+#define MAX_BUTTONS 47
+#define MAX_SWITCHES 13
+#define MAX_ENCODERS 15
+#define MAX_POTIS 2
 #define NUM_LEDS 7
 #define DM13A_DAI 10
 #define DM13A_DCK 13
@@ -34,17 +42,16 @@
 #define AP_STD 1
 #define LEFT_PANEL 0
 #define RIGHT_PANEL 0
+#define MAX_BUTTONS 50
+#define MAX_SWITCHES 20
+#define MAX_ENCODERS 15
+#define MAX_POTIS 2
 #define NUM_LEDS 0
 #define DM13A_DAI 10
 #define DM13A_DCK 13
 #define DM13A_LAT 12
 #endif
 
-// reserve space for input devices
-#define MAX_BUTTONS 50
-#define MAX_SWITCHES 20
-#define MAX_ENCODERS 15
-#define MAX_POTIS 2
 // delay for repeating buttons
 #define REPEAT_DELAY 150
 #define DEBOUNCE_DELAY 50
@@ -121,7 +128,7 @@ void handleMux()
         //     MSB                 LSB
         // P1: PC6 PC7 PA7 PA6 PA5 PA4
         // P2: PC0 PC1 PC2 PC3 PC4 PC5
-        Mux[pin] = ((~PINA & 0xF0) >> 4) | (__builtin_avr_insert_bits(0x01234567, ~PINC, 0) << 4);
+        Mux[pin] = (uint16_t)((~PINA & 0xF0) >> 4) | ((uint16_t)__builtin_avr_insert_bits(0x01234567, ~PINC, 0) << 4);
 #endif
     }
 }
@@ -288,6 +295,7 @@ void handleLEDs()
 }
 #endif
 
+#if MAX_POTIS > 0
 // analog inputs with 16 steps
 void initPoti(poti_t *pot)
 {
@@ -305,6 +313,7 @@ void handlePoti(poti_t *pot, const char *name, int16_t input)
         Serial.write("=1\n");
     }
 }
+#endif
 
 // main setup routine
 void setup()
@@ -333,10 +342,12 @@ void setup()
     {
         initEncoder(&Encoders[enc]);
     }
+#if MAX_POTIS > 0    
     for (uint8_t pot = 0; pot < MAX_POTIS; pot++)
     {
         initPoti(&Potis[pot]);
     }
+#endif
 }
 
 // Main loop routine
