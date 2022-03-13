@@ -2,7 +2,7 @@
 #include "Arduino.h"
 
 // configuration
-#define VERSION "1.4.0"
+#define VERSION "1.4.1"
 #define XFD_UNIT 1
 // printout debug data
 #define DEBUG 0
@@ -52,9 +52,10 @@
 #define DM13A_LAT 12
 #endif
 
-// delay for repeating buttons
+// delays [ms]
 #define KEEPALIVE_DELAY 500
 #define REPEAT_DELAY 250
+// delay [cycles]
 #define DEBOUNCE_DELAY 50
 
 // storage for input devices
@@ -151,26 +152,29 @@ void initButton(button_t *but)
 }
 void handleButton(button_t *but, const char *name, repeat_t rep, bool input)
 {
-    if (input && (but->_state == 0))
+    if (input)
     {
-        Serial.write(name);
-        Serial.write("=1\n");
-        but->_state = DEBOUNCE_DELAY;
-        if (rep == repeat)
-        {
-            tmr_rep = millis() + REPEAT_DELAY;
-        }
-    }
-    if (input && (rep == repeat))
-    {
-        if (millis() > tmr_rep)
+        if (but->_state == 0)
         {
             Serial.write(name);
             Serial.write("=1\n");
-            tmr_rep += REPEAT_DELAY;
+            but->_state = DEBOUNCE_DELAY;
+            if (rep == repeat)
+            {
+                tmr_rep = millis() + REPEAT_DELAY;
+            }
+        }
+        if (rep == repeat)
+        {
+            if (millis() > tmr_rep)
+            {
+                Serial.write(name);
+                Serial.write("=1\n");
+                tmr_rep += REPEAT_DELAY;
+            }
         }
     }
-    if (!input && (but->_state > 0))
+    else if (but->_state > 0)
     {
         if (--but->_state == 0)
         {
@@ -212,7 +216,7 @@ void initEncoder(encoder_t *enc)
 void handleEncoder(encoder_t *enc, const char *up, const char *dn, bool input1, bool input2, uint8_t pulses)
 {
     // collect new state
-    enc->_state = ((enc->_state & 0x03) << 2) | input1 | (input2 << 1);
+    enc->_state = ((enc->_state & 0x03) << 2) | (input2 << 1) | input1;
     // evaluate state change
     switch (enc->_state)
     {
@@ -273,6 +277,8 @@ void setupLEDs()
     digitalWrite(DM13A_LAT, LOW);
     digitalWrite(DM13A_DAI, LOW);
     // init loop thru all LEDs
+    writeLEDs(0xFFFF);
+    delay(500);
     for (uint8_t i = 0; i < NUM_LEDS; ++i)
     {
         writeLEDs(1 << i);
