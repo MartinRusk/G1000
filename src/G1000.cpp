@@ -2,7 +2,7 @@
 #include "Arduino.h"
 
 // configuration
-#define VERSION "1.3.9"
+#define VERSION "1.4.0"
 #define XFD_UNIT 1
 // printout debug data
 #define DEBUG 0
@@ -53,7 +53,8 @@
 #endif
 
 // delay for repeating buttons
-#define REPEAT_DELAY 150
+#define KEEPALIVE_DELAY 500
+#define REPEAT_DELAY 250
 #define DEBOUNCE_DELAY 50
 
 // storage for input devices
@@ -88,7 +89,10 @@ enum repeat_t
 // packed format to save memory space
 uint16_t Mux[16];
 // keep alive timer
-uint32_t next = 0;
+uint32_t tmr_next = 0;
+// repeat timer
+uint32_t tmr_rep = 0;
+
 #if DEBUG
 // counter to check runtime behavior
 uint16_t count = 0;
@@ -147,23 +151,23 @@ void initButton(button_t *but)
 }
 void handleButton(button_t *but, const char *name, repeat_t rep, bool input)
 {
-    if (rep == repeat)
+    if (input && (but->_state == 0))
     {
-        if (input)
+        Serial.write(name);
+        Serial.write("=1\n");
+        but->_state = DEBOUNCE_DELAY;
+        if (rep == repeat)
         {
-            Serial.write(name);
-            Serial.write("=1\n");
-            delay(REPEAT_DELAY);
-            but->_state = DEBOUNCE_DELAY;
+            tmr_rep = millis() + REPEAT_DELAY;
         }
     }
-    else
+    if (input && (rep == repeat))
     {
-        if (input && (but->_state == 0))
+        if (millis() > tmr_rep)
         {
             Serial.write(name);
             Serial.write("=1\n");
-            but->_state = DEBOUNCE_DELAY;
+            tmr_rep += REPEAT_DELAY;
         }
     }
     if (!input && (but->_state > 0))
@@ -357,7 +361,7 @@ void loop()
     handleMux();
 
     // keep alive for RSG connection
-    if (millis() >= next)
+    if (millis() >= tmr_next)
     { // timer interval for keepalive
         Serial.write("\\####RealSimGear#mrusk-G1000XFD1#1#");
         Serial.write(VERSION);
@@ -370,7 +374,8 @@ void loop()
         Serial.println(count);
         count = 0;
 #endif
-        next = millis() + 500;
+        // 500ms keep alive cycle
+        tmr_next += KEEPALIVE_DELAY;
     }
 
 #if DEBUG
