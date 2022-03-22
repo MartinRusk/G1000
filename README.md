@@ -7,3 +7,7 @@ The implementation is based the original FlightSimMaker solution (see https://do
 Contains CAD files from the FlightSimMaker Discord https://discord.gg/YVbK6dmkeV.
 
 PCBs to build the solution are available. Just Contact me.
+
+The software is free software according to the MIT license.
+The 3D design files are made by DKF and mrusk and licensed as CC-BY-NC-SA.
+
