@@ -1,6 +1,6 @@
 # G1000 
 
-This repository hosts the firmware for the mrusk G1000 device.
+This repository hosts the firmware and design files for the mrusk G1000 device.
 
 The implementation is based the original FlightSimMaker solution (see https://docs.google.com/presentation/d/1siKPc6BkJSg9kihLLKLU8frNLp2IIBlw_dUE9n4Btq4).
 
