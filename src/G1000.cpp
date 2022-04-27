@@ -2,15 +2,22 @@
 #include "Arduino.h"
 
 // configuration
-#define VERSION "1.5.0"
+#define VERSION "1.6.0"
 #define XFD_UNIT 1
+
 // printout debug data
 #define DEBUG 0
+
+// supported board types
+#define BOARD_NANO 0
+#define BOARD_MICRO 1
+#define BOARD_MEGA 2
 
 // Select unit
 #if XFD_UNIT == 1
 // mrusk PFD
 #define BOARD_ID "0001"
+#define BOARD_TYPE BOARD_NANO
 #define AP_NXI 0
 #define AP_STD 0
 #define MFD_PANEL 0
@@ -27,6 +34,7 @@
 #elif XFD_UNIT == 2
 // mrusk MFD
 #define BOARD_ID "0002"
+#define BOARD_TYPE BOARD_NANO
 #define AP_NXI 1
 #define AP_STD 0
 #define MFD_PANEL 0
@@ -36,6 +44,7 @@
 #define MAX_SWITCHES 13
 #define MAX_ENCODERS 15
 #define MAX_POTIS 2
+#define ANALOG_BASE 6
 #define NUM_LEDS 7
 #define DM13A_DAI 10
 #define DM13A_DCK 13
@@ -43,6 +52,7 @@
 #elif XFD_UNIT == 3
 // mrusk PFD #2
 #define BOARD_ID "0003"
+#define BOARD_TYPE BOARD_MEGA
 #define AP_NXI 0
 #define AP_STD 1
 #define MFD_PANEL 0
@@ -59,6 +69,7 @@
 #elif XFD_UNIT == 4
 // fzahn PFD+MFD unit
 #define BOARD_ID "0004"
+#define BOARD_TYPE BOARD_MEGA
 #define AP_NXI 0
 #define AP_STD 1
 #define MFD_PANEL 1
@@ -72,6 +83,41 @@
 #define DM13A_DAI 8
 #define DM13A_DCK 10
 #define DM13A_LAT 12
+#elif XFD_UNIT == 11
+// mrusk PFD micro
+#define BOARD_ID "0011"
+#define BOARD_TYPE BOARD_MICRO
+#define AP_NXI 0
+#define AP_STD 0
+#define MFD_PANEL 0
+#define LEFT_PANEL 1
+#define RIGHT_PANEL 0
+#define MAX_BUTTONS 50
+#define MAX_SWITCHES 20
+#define MAX_ENCODERS 15
+#define MAX_POTIS 0
+#define NUM_LEDS 3
+#define DM13A_DAI 16
+#define DM13A_DCK 14
+#define DM13A_LAT 15
+#elif XFD_UNIT == 12
+// mrusk MFD micro
+#define BOARD_ID "0012"
+#define BOARD_TYPE BOARD_MICRO
+#define AP_NXI 1
+#define AP_STD 0
+#define MFD_PANEL 0
+#define LEFT_PANEL 0
+#define RIGHT_PANEL 1
+#define MAX_BUTTONS 47
+#define MAX_SWITCHES 13
+#define MAX_ENCODERS 15
+#define MAX_POTIS 2
+#define ANALOG_BASE 0
+#define NUM_LEDS 7
+#define DM13A_DAI 16
+#define DM13A_DCK 14
+#define DM13A_LAT 15
 #else
 #endif
 
@@ -126,9 +172,12 @@ bool init_mark = false;
 // setup multiplexer pins as outputs
 void setupMux()
 {
-#ifdef ARDUINO_AVR_NANO
+#if BOARD_TYPE == BOARD_NANO
     // set bits 2-5 Port D to output for mux adress (Pin 2-5)
     DDRD = (DDRD & 0xfc) | 0x3c;
+#elif BOARD_TYPE == BOARD_MICRO
+    // set bits 0-3 Port D to output for mux adress
+    DDRD = (DDRD & 0xf0) | 0x0f;
 #else
     // set bits 0-3 Port A to output for mux adress (Pin 22-25)
     DDRA = 0x0f;
@@ -141,14 +190,25 @@ void handleMux()
     // loop over all pins
     for (uint8_t pin = 0; pin < 16; pin++)
     {
-#ifdef ARDUINO_AVR_NANO
+#if BOARD_TYPE == BOARD_NANO
         // remap pins 0+1 to 4+5 due to bug on PCB
         PORTD = (PIND & 0xc3) | (pin & 0x0c) | ((pin & 0x03) << 4);
         // delay to settle mux
         delayMicroseconds(5);
         // join inputs from all boards into channels
         // P1 and P2 are exchanged on HAT board
-        Mux[pin] = (~PINC & 0x3F); // | (int16_t)(~PINB & 0x3F) << 6;
+        Mux[pin] = (~PINC & 0x3F);
+#elif BOARD_TYPE == BOARD_MICRO
+        // select MUX pin
+        // MSB         LSB
+        // PD0 PD1 PD2 PD3
+        PORTD = (PIND & 0xf0) | (pin & 0x08) >> 3 | ((pin & 0x04) >> 1) | (pin & 0x02) << 1 | ((pin & 0x01) << 3);
+        // delay to settle mux
+        delayMicroseconds(5);
+        // join inputs from all boards into channels
+        // MSB                 LSB
+        // PB5 PB4 PE6 PD7 PC6 PD4
+        Mux[pin] = (~PIND & 0x10) >> 4 | (~PINC & 0x40) >> 5 | (~PIND & 0x80) >> 5 | (~PINE & 0x40) >> 3 | (~PINB & 0x30);
 #else
         PORTA = (PINA & 0xF0) | pin;
         // delay to settle mux
@@ -376,7 +436,7 @@ void setup()
     {
         initEncoder(&Encoders[enc]);
     }
-#if MAX_POTIS > 0    
+#if MAX_POTIS > 0
     for (uint8_t pot = 0; pot < MAX_POTIS; pot++)
     {
         initPoti(&Potis[pot]);
@@ -556,13 +616,13 @@ void loop()
     handleSwitch(&Switches[swi++], "SW_FLAP_DN", getMux(Mux, 5, 12));
     handleSwitch(&Switches[swi++], "SW_FLAP_UP", getMux(Mux, 5, 13));
     // analog inputs
-    handlePoti(&Potis[pot++], "SW_INSTR", analogRead(6));
-    handlePoti(&Potis[pot++], "SW_FLOOD", analogRead(7));
+    handlePoti(&Potis[pot++], "SW_INSTR", analogRead(ANALOG_BASE));
+    handlePoti(&Potis[pot++], "SW_FLOOD", analogRead(ANALOG_BASE + 1));
 #endif
 
 #if MFD_PANEL
     // use second connector for MFD (single Arduino setup)
-    //MUX 6
+    // MUX 6
     handleButton(&Buttons[btn++], "BTN_NAV_TOG_MFD", single, getMux(Mux, 6, 0));
     handleEncoder(&Encoders[enc++], "ENC_NAV_INNER_UP_MFD", "ENC_NAV_INNER_DN_MFD", getMux(Mux, 6, 1), getMux(Mux, 6, 2), 4);
     handleEncoder(&Encoders[enc++], "ENC_NAV_OUTER_UP_MFD", "ENC_NAV_OUTER_DN_MFD", getMux(Mux, 6, 4), getMux(Mux, 6, 3), 4);
@@ -573,7 +633,7 @@ void loop()
     handleEncoder(&Encoders[enc++], "ENC_CRS_UP_MFD", "ENC_CRS_DN_MFD", getMux(Mux, 6, 11), getMux(Mux, 6, 12), 4);
     handleEncoder(&Encoders[enc++], "ENC_BARO_UP_MFD", "ENC_BARO_DN_MFD", getMux(Mux, 6, 14), getMux(Mux, 6, 13), 4);
 
-   // MUX 7
+    // MUX 7
     handleButton(&Buttons[btn++], "BTN_ALT_SEL_MFD", single, getMux(Mux, 7, 0));
     handleEncoder(&Encoders[enc++], "ENC_ALT_INNER_UP_MFD", "ENC_ALT_INNER_DN_MFD", getMux(Mux, 7, 1), getMux(Mux, 7, 2), 4);
     handleEncoder(&Encoders[enc++], "ENC_ALT_OUTER_UP_MFD", "ENC_ALT_OUTER_DN_MFD", getMux(Mux, 7, 4), getMux(Mux, 7, 3), 4);
@@ -586,7 +646,7 @@ void loop()
     handleButton(&Buttons[btn++], "BTN_MENU_MFD", single, getMux(Mux, 7, 13));
     handleButton(&Buttons[btn++], "BTN_PROC_MFD", single, getMux(Mux, 7, 14));
     handleButton(&Buttons[btn++], "BTN_ENT_MFD", single, getMux(Mux, 7, 15));
-     // MUX 8
+    // MUX 8
 #if AP_NXI
     handleButton(&Buttons[btn++], "BTN_AP_MFD", single, getMux(Mux, 8, 0));
     handleButton(&Buttons[btn++], "BTN_FD_MFD", single, getMux(Mux, 8, 1));
@@ -618,8 +678,8 @@ void loop()
     handleEncoder(&Encoders[enc++], "ENC_NAV_VOL_UP_MFD", "ENC_NAV_VOL_DN_MFD", getMux(Mux, 8, 12), getMux(Mux, 8, 13), 4);
     handleButton(&Buttons[btn++], "BTN_NAV_VOL_MFD", single, getMux(Mux, 8, 14));
     handleButton(&Buttons[btn++], "BTN_NAV_FF_MFD", single, getMux(Mux, 8, 15));
-    
-     // MUX 9
+
+    // MUX 9
     handleButton(&Buttons[btn++], "BTN_SOFT_1_MFD", single, getMux(Mux, 9, 0));
     handleButton(&Buttons[btn++], "BTN_SOFT_2_MFD", single, getMux(Mux, 9, 1));
     handleButton(&Buttons[btn++], "BTN_SOFT_3_MFD", single, getMux(Mux, 9, 2));
@@ -635,8 +695,8 @@ void loop()
     handleEncoder(&Encoders[enc++], "ENC_COM_VOL_UP_MFD", "ENC_COM_VOL_DN_MFD", getMux(Mux, 9, 12), getMux(Mux, 9, 13), 4);
     handleButton(&Buttons[btn++], "BTN_COM_VOL_MFD", single, getMux(Mux, 9, 14));
     handleButton(&Buttons[btn++], "BTN_COM_FF_MFD", single, getMux(Mux, 9, 15));
-    
-// MUX 10
+
+    // MUX 10
     handleButton(&Buttons[btn++], "BTN_PAN_SYNC_MFD", single, getMux(Mux, 10, 0) && !getMux(Mux, 10, 1) && !getMux(Mux, 10, 2) && !getMux(Mux, 10, 3) && !getMux(Mux, 10, 4));
     handleButton(&Buttons[btn++], "BTN_PAN_UP_MFD", repeat, getMux(Mux, 10, 0) && getMux(Mux, 10, 1));
     handleButton(&Buttons[btn++], "BTN_PAN_LEFT_MFD", repeat, getMux(Mux, 10, 0) && getMux(Mux, 10, 2));
