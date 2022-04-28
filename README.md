@@ -6,7 +6,7 @@ The implementation is based the original FlightSimMaker solution (see https://do
 
 Contains CAD files from the FlightSimMaker Discord https://discord.gg/YVbK6dmkeV.
 
-PCBs to build the solution are available. Just Contact me.
+PCBs to build the solution are available. Just Contact me via g1000nxi@outlook.de
 
 Software is (c) by mrusk.
 
