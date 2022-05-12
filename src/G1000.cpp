@@ -2,8 +2,8 @@
 #include "Arduino.h"
 
 // configuration
-#define VERSION "1.6.0"
-#define XFD_UNIT 1
+#define VERSION "3.1.0"
+#define XFD_UNIT 11
 
 // printout debug data
 #define DEBUG 0
@@ -453,7 +453,7 @@ void loop()
     // keep alive for RSG connection
     if (millis() >= tmr_next)
     { // timer interval for keepalive
-        Serial.write("\\####RealSimGear#mrusk-G1000XFD1#1#");
+        Serial.write("####RealSimGear#mrusk-G1000XFD1#1#");
         Serial.write(VERSION);
         Serial.write("#");
         Serial.write(BOARD_ID);
