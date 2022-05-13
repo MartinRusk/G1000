@@ -2,7 +2,7 @@
 #include "Arduino.h"
 
 // configuration
-#define VERSION "3.1.0"
+#define VERSION "3.1.1"
 #define XFD_UNIT 11
 
 // printout debug data
@@ -121,11 +121,14 @@
 #else
 #endif
 
-// delays [ms]
+// delay for keep alive message [ms]
 #define KEEPALIVE_DELAY 500
+// delay for key repeat [ms]
 #define REPEAT_DELAY 250
-// delay [cycles]
+// delay for key debouncing [cycles]
 #define DEBOUNCE_DELAY 50
+// delay for MUX settling [us]
+#define MUX_DELAY 10
 
 // storage for input devices
 struct button_t
@@ -194,7 +197,7 @@ void handleMux()
         // remap pins 0+1 to 4+5 due to bug on PCB
         PORTD = (PIND & 0xc3) | (pin & 0x0c) | ((pin & 0x03) << 4);
         // delay to settle mux
-        delayMicroseconds(5);
+        delayMicroseconds(MUX_DELAY);
         // join inputs from all boards into channels
         // P1 and P2 are exchanged on HAT board
         Mux[pin] = (~PINC & 0x3F);
@@ -204,7 +207,7 @@ void handleMux()
         // PD0 PD1 PD2 PD3
         PORTD = (PIND & 0xf0) | (pin & 0x08) >> 3 | ((pin & 0x04) >> 1) | (pin & 0x02) << 1 | ((pin & 0x01) << 3);
         // delay to settle mux
-        delayMicroseconds(5);
+        delayMicroseconds(MUX_DELAY);
         // join inputs from all boards into channels
         // MSB                 LSB
         // PB5 PB4 PE6 PD7 PC6 PD4
@@ -212,7 +215,7 @@ void handleMux()
 #else
         PORTA = (PINA & 0xF0) | pin;
         // delay to settle mux
-        delayMicroseconds(5);
+        delayMicroseconds(MUX_DELAY);
         // scan inputs from first two Mux boards (P1 & P2)
         //     MSB                 LSB
         // P1: PC6 PC7 PA7 PA6 PA5 PA4
