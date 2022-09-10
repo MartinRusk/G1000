@@ -1,10 +1,12 @@
 # G1000 
 
-This repository hosts the firmware and design files for the mrusk G1000 device.
+This repository hosts the firmware and design files for the mrusk G1000 device. 
 
 The implementation is based the original FlightSimMaker solution (see https://docs.google.com/presentation/d/1siKPc6BkJSg9kihLLKLU8frNLp2IIBlw_dUE9n4Btq4).
 
 Contains CAD files from the FlightSimMaker Discord https://discord.gg/YVbK6dmkeV.
+
+3D Design also available at Printables: https://www.printables.com/de/model/199536-flight-simulator-g1000-nxi
 
 PCBs to build the solution are available. Just Contact me via g1000nxi@outlook.de
 
