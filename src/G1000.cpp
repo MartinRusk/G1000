@@ -3,7 +3,7 @@
 
 // configuration
 #define VERSION "3.1.1"
-#define XFD_UNIT 11
+#define XFD_UNIT 1
 
 // printout debug data
 #define DEBUG 0
@@ -15,39 +15,21 @@
 
 // Select unit
 #if XFD_UNIT == 1
-// mrusk PFD
+// default PFD+MFD unit
 #define BOARD_ID "0001"
-#define BOARD_TYPE BOARD_NANO
-#define AP_NXI 0
-#define AP_STD 0
-#define MFD_PANEL 0
-#define LEFT_PANEL 1
-#define RIGHT_PANEL 0
-#define MAX_BUTTONS 50
-#define MAX_SWITCHES 20
-#define MAX_ENCODERS 15
-#define MAX_POTIS 0
-#define NUM_LEDS 3
-#define DM13A_DAI 8
+#define BOARD_TYPE BOARD_MEGA
+#define AP_NXI 0 // Autopilot: NXI button layout (eg. for Aerobask DA-62)
+#define AP_STD 1 // Autopilot: Standard button layout
+#define MFD_PANEL 1 // MFD panel also attached?
+#define LEFT_PANEL 0 // mrusk only
+#define RIGHT_PANEL 0 // mrusk only
+#define MAX_BUTTONS 100 
+#define MAX_SWITCHES 30
+#define MAX_ENCODERS 30
+#define MAX_POTIS 0 
+#define NUM_LEDS 0 // DM13A LED board attached?
+#define DM13A_DAI 8 // adapt to actual LED board pins
 #define DM13A_DCK 10
-#define DM13A_LAT 12
-#elif XFD_UNIT == 2
-// mrusk MFD
-#define BOARD_ID "0002"
-#define BOARD_TYPE BOARD_NANO
-#define AP_NXI 1
-#define AP_STD 0
-#define MFD_PANEL 0
-#define LEFT_PANEL 0
-#define RIGHT_PANEL 1
-#define MAX_BUTTONS 47
-#define MAX_SWITCHES 13
-#define MAX_ENCODERS 15
-#define MAX_POTIS 2
-#define ANALOG_BASE 6
-#define NUM_LEDS 7
-#define DM13A_DAI 10
-#define DM13A_DCK 13
 #define DM13A_LAT 12
 #elif XFD_UNIT == 3
 // mrusk PFD #2
