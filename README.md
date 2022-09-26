@@ -8,7 +8,7 @@ Contains CAD files from the FlightSimMaker Discord https://discord.gg/YVbK6dmkeV
 
 3D Design also available at Printables: https://www.printables.com/de/model/199536-flight-simulator-g1000-nxi
 
-PCBs to build the solution are available. Just Contact me via g1000nxi@outlook.de
+PCBs to build the solution are currently out of stock. Order details are given in the building instructions. In case of trouble you may contact me via g1000nxi@outlook.de
 
 Software is (c) by mrusk.
 
