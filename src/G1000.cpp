@@ -2,16 +2,17 @@
 #include "Arduino.h"
 
 // configuration
-#define VERSION "3.1.1"
+#define VERSION "3.1.2"
 #define XFD_UNIT 1
+// Don't forget to select the corresponding PlatformIO target for build!
 
 // printout debug data
 #define DEBUG 0
 
-// supported board types
-#define BOARD_NANO 0
-#define BOARD_MICRO 1
-#define BOARD_MEGA 2
+// supported board types 
+#define BOARD_NANO 0 // Arduino nano, unstable serial port (drops chars)
+#define BOARD_MICRO 1 // Sparkfun pro micro, only usable with RSG drives V1.5, not with V2.x
+#define BOARD_MEGA 2 // Arduino Mega 2560, most versatile
 
 // Select unit
 #if XFD_UNIT == 1
@@ -23,12 +24,12 @@
 #define MFD_PANEL 1 // MFD panel also attached?
 #define LEFT_PANEL 0 // mrusk only
 #define RIGHT_PANEL 0 // mrusk only
-#define MAX_BUTTONS 100 
-#define MAX_SWITCHES 30
-#define MAX_ENCODERS 30
-#define MAX_POTIS 0 
-#define NUM_LEDS 0 // DM13A LED board attached?
-#define DM13A_DAI 8 // adapt to actual LED board pins
+#define MAX_BUTTONS 100 // maximum number of buttons
+#define MAX_SWITCHES 30 // maximum number of switches
+#define MAX_ENCODERS 30 // maximum number of encoders
+#define MAX_POTIS 0  // maximum number of potis (analog inputs)
+#define NUM_LEDS 0 // >0 when DM13A LED board attached?
+#define DM13A_DAI 8 // adapt pins to actual LED board pins
 #define DM13A_DCK 10
 #define DM13A_LAT 12
 #elif XFD_UNIT == 3
@@ -126,7 +127,7 @@ struct switch_t
 struct encoder_t
 {
     uint8_t _state;
-    int8_t _count, _mark;
+    int8_t _count;
 } Encoders[MAX_ENCODERS];
 
 struct poti_t
@@ -170,6 +171,7 @@ void setupMux()
 #endif
 }
 // scan all multiplexers simultaneously into virtual inputs
+// strongly optimized code for realtime behaviour
 void handleMux()
 {
     // loop over all pins
