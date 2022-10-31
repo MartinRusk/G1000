@@ -3,8 +3,11 @@
 
 // configuration
 #define VERSION "3.1.2"
+
+// Select the corresponding PlatformIO target for build, default is mega_pfd_mfd
+#ifndef XFD_UNIT
 #define XFD_UNIT 1
-// Don't forget to select the corresponding PlatformIO target for build!
+#endif
 
 // printout debug data
 #define DEBUG 0
