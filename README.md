@@ -10,7 +10,12 @@ Contains CAD files from the FlightSimMaker Discord https://discord.gg/YVbK6dmkeV
 
 PCBs to build the solution are currently out of stock. Order details are given in the building instructions. In case of trouble you may contact me via g1000nxi@outlook.de
 
-Software is (c) by mrusk.
+Software is (c) by mrusk. It uses the RealSimGear Drivers from https://help.realsimgear.com/en/articles/3090794-just-the-downloads. 
+However, the recommended Version is V1.5.x since the newer Versions may have some compatibility issues.
+
+V1.5 for MSFS: https://1drv.ms/u/s!AhZs4hE0pPvcsbh1ovlsRtdR6_IBfg?e=L3VeRq
+
+V1.5 for XPlane 11 and 12: https://1drv.ms/u/s!AhZs4hE0pPvcsblXLjjgcCkKaBG6_w?e=KqNIyT
 
 Licensed under GPL V3.0 License.
 
