@@ -17,11 +17,9 @@ V1.5 for MSFS: https://1drv.ms/u/s!AhZs4hE0pPvcsbh1ovlsRtdR6_IBfg?e=L3VeRq
 
 V1.5 for XPlane 11 and 12: https://1drv.ms/u/s!AhZs4hE0pPvcsblXLjjgcCkKaBG6_w?e=KqNIyT
 
-Licensed under GPL V3.0 License.
+Software provided here is licensed under GPL V3.0 License.
 
-3D design files are (c) by DKF and mrusk. 
-
-Licensed under a
+3D design files are (c) by DKF and mrusk, licensed under a
 [Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License][cc-by-nc-sa].
 
 [![CC BY-NC-SA 4.0][cc-by-nc-sa-image]][cc-by-nc-sa]
@@ -30,9 +28,7 @@ Licensed under a
 [cc-by-nc-sa-image]: https://licensebuttons.net/l/by-nc-sa/4.0/88x31.png
 [cc-by-nc-sa-shield]: https://img.shields.io/badge/License-CC%20BY--NC--SA%204.0-lightgrey.svg
 
-PCB design files are (c) by mrusk. 
-
-Licensed under a
+PCB design files are (c) by mrusk, licensed under a
 [Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International License][cc-by-nc-nd].
 
 [![CC BY-NC-ND 4.0][cc-by-nc-nd-image]][cc-by-nc-nd]
