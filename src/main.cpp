@@ -3,6 +3,8 @@
 #include <Button.h>
 #include <Encoder.h>
 #include <Switch.h>
+#include <LedShift.h>
+#include <AnalogIn.h>
 
 Button but1(0, 1);
 RepeatButton but2(0, 1, 500);
