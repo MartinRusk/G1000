@@ -3,18 +3,21 @@
 
 #define MUX_MAX_NUMBER 6
 
-class Mux
+class Mux_
 {
 public:
-  Mux(int8_t s0, int8_t s1, int8_t s2, int8_t s3);
-  bool addPin(int8_t pin);
-  bool getBit(int8_t module, int8_t input);
+  Mux_();
+  void setSelect(uint8_t s0, uint8_t s1, uint8_t s2, uint8_t s3);
+  bool addPin(uint8_t pin);
+  bool getBit(uint8_t mux, uint8_t muxpin);
   void handle();
 private:
-  int8_t _s0, _s1, _s2, _s3;
-  int8_t _numPins;
-  int8_t _pin[MUX_MAX_NUMBER];
+  uint8_t _s0, _s1, _s2, _s3;
+  uint8_t _numPins;
+  uint8_t _pin[MUX_MAX_NUMBER];
   int16_t _data[MUX_MAX_NUMBER];
-}
+};
+
+extern Mux_ Mux;
 
 #endif
