@@ -1,6 +1,5 @@
 #ifndef Button_h
 #define Button_h
-
 #include <Mux.h>
 
 // simple Button

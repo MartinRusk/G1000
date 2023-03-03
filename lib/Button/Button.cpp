@@ -1,6 +1,5 @@
 #include <Arduino.h>
 #include "Button.h"
-#include <Mux.h>
 
 #define DEBOUNCE_DELAY 100
 
@@ -67,16 +66,14 @@ bool Button::released()
   return false;
 }
 
-RepeatButton::RepeatButton(uint8_t mux, uint8_t muxpin, uint32_t delay) : Button(mux, muxpin)
+RepeatButton::RepeatButton(uint8_t mux, uint8_t pin, uint32_t delay) : Button(mux, pin)
 {
   _delay = delay;
   _timer = 0;
 }
 
-RepeatButton::RepeatButton(uint8_t pin, uint32_t delay) : Button(pin)
+RepeatButton::RepeatButton(uint8_t pin, uint32_t delay) : RepeatButton(255, pin, delay)
 {
-  _delay = delay;
-  _timer = 0;
 }
 
 void RepeatButton::handle()
