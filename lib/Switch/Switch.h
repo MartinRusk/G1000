@@ -9,10 +9,18 @@ public:
   Switch(uint8_t pin);
   void handle();
   bool engaged();
-private:
+protected:
   uint8_t _mux;
   uint8_t _pin;
   uint8_t _state;
 };
+
+// class Switch2 : Switch
+// {
+// public:
+  
+// protected:
+
+// }
 
 #endif

@@ -140,3 +140,8 @@ bool Encoder::released()
   }
   return false;
 }
+
+bool Encoder::engaged()
+{
+  return _state > 0;
+}

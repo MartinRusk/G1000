@@ -13,6 +13,7 @@ public:
   bool down();
   bool pressed();
   bool released();
+  bool engaged();
 private:
   uint8_t _mux;
   uint8_t _pin1, _pin2, _pin3;

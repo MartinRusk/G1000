@@ -66,6 +66,11 @@ bool Button::released()
   return false;
 }
 
+bool Button::engaged()
+{
+  return _state > 0;
+}
+
 RepeatButton::RepeatButton(uint8_t mux, uint8_t pin, uint32_t delay) : Button(mux, pin)
 {
   _delay = delay;

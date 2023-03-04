@@ -11,6 +11,7 @@ public:
   void handle();
   bool pressed();
   bool released();
+  bool engaged();
 protected:
   uint8_t _mux;
   uint8_t _pin;
@@ -19,7 +20,7 @@ protected:
 };
 
 // Button with automatic Repeat
-class RepeatButton : Button
+class RepeatButton : public Button
 {
 public:
   RepeatButton(uint8_t pin, uint32_t delay);
