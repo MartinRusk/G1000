@@ -7,8 +7,8 @@ class Mux_
 {
 public:
   Mux_();
-  void setSelect(uint8_t s0, uint8_t s1, uint8_t s2, uint8_t s3);
-  bool addPin(uint8_t pin);
+  void begin(uint8_t s0, uint8_t s1, uint8_t s2, uint8_t s3);
+  bool addMux(uint8_t pin);
   bool getBit(uint8_t mux, uint8_t muxpin);
   void handle();
 private:

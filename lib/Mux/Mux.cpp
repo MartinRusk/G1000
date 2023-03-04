@@ -4,18 +4,26 @@
 Mux_::Mux_()
 {
   _numPins = 0;
+  for (uint8_t mux = 0; mux < MUX_MAX_NUMBER; mux++)
+  {
+    _pin[mux] = 255;
+  }
 }
 
-void Mux_::setSelect(uint8_t s0, uint8_t s1, uint8_t s2, uint8_t s3)
+void Mux_::begin(uint8_t s0, uint8_t s1, uint8_t s2, uint8_t s3)
 {
   _s0 = s0;
   _s1 = s1;
   _s2 = s2;
-  _s3 = s3;
+  _s3 = s3;    
+  pinMode(_s0, OUTPUT);
+  pinMode(_s1, OUTPUT);
+  pinMode(_s2, OUTPUT);
+  pinMode(_s3, OUTPUT);
 }
 
 // add a pin to mux
-bool Mux_::addPin(uint8_t pin)
+bool Mux_::addMux(uint8_t pin)
 {
   if (_numPins < MUX_MAX_NUMBER)
   {
@@ -44,7 +52,7 @@ void Mux_::handle()
     digitalWrite(_s1, bitRead(muxpin, 1));
     digitalWrite(_s2, bitRead(muxpin, 2));
     digitalWrite(_s3, bitRead(muxpin, 3));
-    for (uint8_t mux; mux < _numPins; mux++)
+    for (uint8_t mux = 0; mux < _numPins; mux++)
     {
       bitWrite(_data[mux], muxpin, !digitalRead(_pin[mux]));
     }
