@@ -79,13 +79,13 @@ Switch swLightLanding(5, 0);
 Switch swLightTaxi(5, 1);
 Switch swLightPosition(5, 2);
 Switch swLightStrobe(5, 3);
-// Switch2 swFuelLeft(5, 4, 5);
-// Switch2 swFuelRight(5, 6, 7);
+Switch2 swFuelLeft(5, 4, 5);
+Switch2 swFuelRight(5, 6, 7);
 Switch swFuelAuxLeft(5, 8);
 Switch swFuelAuxRight(5, 9);
-Button butGearTest(5, 10);
+Button btnGearTest(5, 10);
 Switch swGear(5, 11);
-// Switch2 swFlaps(5, 12, 13);
+Switch2 swFlaps(5, 12, 13);
 
 // Potentiometers
 AnalogIn potInstr(A0, false, 10);
@@ -102,7 +102,7 @@ LedShift leds(16, 14, 15);
 #define LED_GEAR_UNSAFE 6
 
 // Timer for Main loop
-SoftTimer tmrMain(10.0);
+SoftTimer tmrMain(100.0);
 
 // Commands MUX 0
 int cmdNavInnerUp;
@@ -193,6 +193,23 @@ int cmdRudderTrimRight;
 int cmdRudderTrimCenter;
 
 // DataRefs MUX 5
+float gear_ratio[3];
+float flap_ratio;
+long int gear_unsafe;
+float light_instr = 0;
+float light_flood = 0;
+long int gear_handle_down;
+float flap_handle_request_ratio;
+
+long int strobe_lights_on;
+long int navigation_lights_on;
+long int taxi_light_on;
+long int landing_lights_on;
+
+long int sw_auxpump1 = 0;
+long int sw_auxpump2 = 0;
+long int sw_fuel_lever1 = 2;
+long int sw_fuel_lever2 = 2;
 
 // Setup 
 void setup()
@@ -305,9 +322,35 @@ void setup()
   cmdHeadingSync  = XP.registerCommand(F("sim/GPS/g1000n3_hdg_sync"));
 
   // MFD
+  // XP.registerCommand(F(""))
+  encRudderTrim.setCmdUp(XP.registerCommand(F("sim/flight_controls/rudder_trim_right")));
+  encRudderTrim.setCmdDown(XP.registerCommand(F("sim/flight_controls/rudder_trim_left")));
+  encRudderTrim.setCmdPush(XP.registerCommand(F("sim/flight_controls/rudder_trim_center")));
+  btnGearTest.setCmd(XP.registerCommand(F("aerobask/gear_test")));
+
+  XP.registerDataRef(F("sim/flightmodel2/gear/deploy_ratio"), XPL_READ, 100, 1.0, &gear_ratio[0], 0);
+  XP.registerDataRef(F("sim/flightmodel2/gear/deploy_ratio"), XPL_READ, 100, 1.0, &gear_ratio[1], 1);
+  XP.registerDataRef(F("sim/flightmodel2/gear/deploy_ratio"), XPL_READ, 100, 1.0, &gear_ratio[2], 2);
+  XP.registerDataRef(F("sim/cockpit/warnings/annunciators/gear_unsafe"), XPL_READ, 100, 1.0, &gear_unsafe);
+  XP.registerDataRef(F("sim/flightmodel2/controls/flap1_deploy_ratio"), XPL_READ, 100, 1.0, &flap_ratio);  
+  // XP.registerDataRef(F("sim/cockpit2/switches/instrument_brightness_ratio"), XPL_WRITE, 100, 1.0, &light_instr, 0);
+  // XP.registerDataRef(F("sim/cockpit2/switches/panel_brightness_ratio"), XPL_WRITE, 100, 1.0, &light_flood, 0);
+
+  XP.registerDataRef(F("sim/cockpit2/controls/gear_handle_down"), XPL_WRITE, 100, 1.0, &gear_handle_down);
+  XP.registerDataRef(F("sim/cockpit2/controls/flap_handle_request_ratio"), XPL_WRITE, 100, 1.0, &flap_handle_request_ratio);
+
+  XP.registerDataRef(F("sim/cockpit2/switches/strobe_lights_on"), XPL_WRITE, 100, 1.0, &strobe_lights_on);
+  XP.registerDataRef(F("sim/cockpit2/switches/navigation_lights_on"), XPL_WRITE, 100, 1.0, &navigation_lights_on);
+  XP.registerDataRef(F("sim/cockpit2/switches/taxi_light_on"), XPL_WRITE, 100, 1.0, &taxi_light_on);
+  XP.registerDataRef(F("sim/cockpit2/switches/landing_lights_on"), XPL_WRITE, 100, 1.0, &landing_lights_on);
+
+  // XP.registerDataRef(F("aerobask/auxfuel/sw_auxpump1"), XPL_WRITE, 100, 1.0, &sw_auxpump1);
+  // XP.registerDataRef(F("aerobask/auxfuel/sw_auxpump2"), XPL_WRITE, 100, 1.0, &sw_auxpump2);
+  // XP.registerDataRef(F("aerobask/eng/sw_fuel_lever1"), XPL_WRITE, 100, 1.0, &sw_fuel_lever1);
+  // XP.registerDataRef(F("aerobask/eng/sw_fuel_lever2"), XPL_WRITE, 100, 1.0, &sw_fuel_lever2);
 
   // delay(5000);
-  // Serial.println(freeMemory(), DEC);
+  Serial.println(freeMemory(), DEC);
 }
 
 void handleDevice(Button *btn, int cmd)
@@ -387,11 +430,13 @@ void loop()
   // handleDevice(&encComInner, cmdComInnerUp, cmdComInnerDown, cmdComToggle);
   // handleDevice(&encComOuter, cmdComOuterUp, cmdComOuterDown);
 
+  // fully implicit (method could be moved to Encoder class)
   handleDevice(&encNavInner);
   handleDevice(&encNavOuter);
   handleDevice(&encComInner);
   handleDevice(&encComOuter);
-
+  
+  // fully explicit
   handleDevice(&encCourse, cmdCourseUp, cmdCourseDown, cmdCourseSync);
   handleDevice(&encBaro, cmdBaroUp, cmdBaroDown);
   handleDevice(&encAltInner, cmdAltInnerUp, cmdAltInnerDown, cmdAltSync);
@@ -460,5 +505,62 @@ void loop()
     XP.commandTrigger(cmdPanRight);
   }
 
-  handleDevice(&encRudderTrim, cmdRudderTrimRight, cmdRudderTrimLeft, cmdRudderTrimCenter);
+  handleDevice(&encRudderTrim);
+  
+  // partly implicit
+  handleDevice(&btnGearTest, btnGearTest.getCmd());
+  
+  strobe_lights_on = swLightStrobe.value();
+  navigation_lights_on = swLightPosition.value();
+  taxi_light_on = swLightTaxi.value();
+  landing_lights_on = swLightLanding.value();
+
+  // light_instr = potInstr.value();
+  // light_flood = potFlood.value();
+
+  flap_handle_request_ratio = (swFlaps.value());
+  gear_handle_down = 1 - swGear.value();
+
+  sw_auxpump1 = swFuelAuxLeft.value();
+  sw_auxpump2 = swFuelAuxRight.value();
+  sw_fuel_lever1 = swFuelLeft.value();
+  sw_fuel_lever2 = swFuelRight.value();
+
+  if (flap_ratio < 0.05)
+  {
+    leds.set(LED_FLAP_UP, ledOn);
+    leds.set(LED_FLAP_TO, ledOff);
+    leds.set(LED_FLAP_LDG, ledOff);
+  }
+  else if (flap_ratio < 0.45)
+  {
+    leds.set(LED_FLAP_UP, ledOn);
+    leds.set(LED_FLAP_TO, ledOn);
+    leds.set(LED_FLAP_LDG, ledOff);
+  }
+  else if (flap_ratio < 0.55)
+  {
+    leds.set(LED_FLAP_UP, ledOff);
+    leds.set(LED_FLAP_TO, ledOn);
+    leds.set(LED_FLAP_LDG, ledOff);
+  }
+  else if (flap_ratio < 0.95)
+  {
+    leds.set(LED_FLAP_UP, ledOff);
+    leds.set(LED_FLAP_TO, ledOn);
+    leds.set(LED_FLAP_LDG, ledOn);
+  }
+  else
+  {
+    leds.set(LED_FLAP_UP, ledOff);
+    leds.set(LED_FLAP_TO, ledOff);
+    leds.set(LED_FLAP_LDG, ledOn);
+  }
+
+  leds.set(LED_GEAR_NOSE, (gear_ratio[0] > 0.99) ? ledOn : ledOff);
+  leds.set(LED_GEAR_LEFT, (gear_ratio[1] > 0.99) ? ledOn : ledOff);
+  leds.set(LED_GEAR_RIGHT, (gear_ratio[2] > 0.99) ? ledOn : ledOff);
+  leds.set(LED_GEAR_UNSAFE, gear_unsafe ? ledOn : ledOff);
+
+  while(!tmrMain.isTick());
 }

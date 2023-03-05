@@ -13,8 +13,6 @@
 #define XPLDIRECT_MAXCOMMANDS_ARDUINO 100  // Same here.
 #define XPLDIRECT_RX_TIMEOUT 500 // after detecting a frame header, how long will we wait to receive the rest of the frame.  (default 500)
 
-#define XPL_COMMAND_MAX_UPDATE_RATE_MILLIS 100 // good for debounce, these are usually buttons that are pressed.  (default 300)
-
 #define XPLMAX_PACKETSIZE 100 // Probably leave this alone. If you need a few extra bytes of RAM it could be reduced, but it needs to
                               // be as long as the longest dataref name + 10.  If you are using datarefs
                               // that transfer strings it needs to be big enough for those too. (default 200)
