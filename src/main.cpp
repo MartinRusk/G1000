@@ -518,7 +518,7 @@ void loop()
   // light_instr = potInstr.value();
   // light_flood = potFlood.value();
 
-  flap_handle_request_ratio = (swFlaps.value());
+  flap_handle_request_ratio = 1.0 - (0.5 * (float)swFlaps.value());
   gear_handle_down = 1 - swGear.value();
 
   sw_auxpump1 = swFuelAuxLeft.value();
@@ -562,5 +562,14 @@ void loop()
   leds.set(LED_GEAR_RIGHT, (gear_ratio[2] > 0.99) ? ledOn : ledOff);
   leds.set(LED_GEAR_UNSAFE, gear_unsafe ? ledOn : ledOff);
 
-  while(!tmrMain.isTick());
+  // static int count = 0;
+  // if (tmrMain.isTick())
+  // {
+  //   Serial.println(count);
+  //   count = 0;
+  // }
+  // else
+  // {
+  //   count++;
+  // }
 }
