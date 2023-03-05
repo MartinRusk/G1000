@@ -73,12 +73,30 @@ int XPLDirect::xloop(void)
 
 int XPLDirect::commandTrigger(int commandHandle)
 {
-  if (!_commands[commandHandle])
-  {
-    return -1; // inactive command
-  }
+  if (!_commands[commandHandle]) return -1; // inactive command
   _sendPacketInt(XPLCMD_COMMANDTRIGGER, _commands[commandHandle]->commandHandle, 1);
   return 0;
+}
+
+int XPLDirect::commandTrigger(int commandHandle, int triggerCount)
+{
+  if (!_commands[commandHandle]) return -1; // inactive command
+  _sendPacketInt(XPLCMD_COMMANDTRIGGER, _commands[commandHandle]->commandHandle, (long int)triggerCount);
+  return 0;
+}
+
+int XPLDirect::commandStart(int commandHandle)
+{
+	if (!_commands[commandHandle]) return -1; // inactive command
+	_sendPacketVoid(XPLCMD_COMMANDSTART, _commands[commandHandle]->commandHandle);
+	return 0;
+}
+
+int XPLDirect::commandEnd(int commandHandle)
+{
+	if (!_commands[commandHandle]) return -1; // inactive command
+	_sendPacketVoid(XPLCMD_COMMANDEND, _commands[commandHandle]->commandHandle);
+	return 0;
 }
 
 int XPLDirect::connectionStatus()

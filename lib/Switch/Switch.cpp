@@ -1,7 +1,7 @@
 #include <Arduino.h>
 #include "Switch.h"
 
-#define DEBOUNCE_DELAY 100;
+#define DEBOUNCE_DELAY 10;
 
 // Buttons
 Switch::Switch(uint8_t mux, uint8_t pin)

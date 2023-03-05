@@ -1,7 +1,7 @@
 #include <Arduino.h>
 #include "Button.h"
 
-#define DEBOUNCE_DELAY 100
+#define DEBOUNCE_DELAY 5
 
 enum
 {
@@ -17,6 +17,7 @@ Button::Button(uint8_t mux, uint8_t pin)
   _pin = pin;
   _state = 0;
   _transition = 0;
+  _cmdPush = -1;
   if (_mux != 255)
   {
     pinMode(_pin, INPUT_PULLUP);
@@ -29,7 +30,12 @@ Button::Button(uint8_t pin) : Button(255, pin)
 
 void Button::handle()
 {
-  if ((_mux == 255) ? !digitalRead(_pin) : Mux.getBit(_mux, _pin))
+  handle((_mux == 255) ? !digitalRead(_pin) : Mux.getBit(_mux, _pin));
+}
+
+void Button::handle(bool input)
+{
+  if (input)
   {
     if (_state == 0)
     {
@@ -71,6 +77,16 @@ bool Button::engaged()
   return _state > 0;
 }
 
+void Button::setCmd(int cmdPush)
+{
+  _cmdPush = cmdPush;
+}
+
+int Button::getCmd()
+{
+  return _cmdPush;
+}
+
 RepeatButton::RepeatButton(uint8_t mux, uint8_t pin, uint32_t delay) : Button(mux, pin)
 {
   _delay = delay;
@@ -83,7 +99,12 @@ RepeatButton::RepeatButton(uint8_t pin, uint32_t delay) : RepeatButton(255, pin,
 
 void RepeatButton::handle()
 {
-  if ((_mux == 255) ? !digitalRead(_pin) : Mux.getBit(_mux, _pin))
+  handle((_mux == 255) ? !digitalRead(_pin) : Mux.getBit(_mux, _pin));
+}
+
+void RepeatButton::handle(bool input)
+{
+  if (input)
   {
     if (_state == 0)
     {

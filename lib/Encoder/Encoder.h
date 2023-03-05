@@ -14,6 +14,12 @@ public:
   bool pressed();
   bool released();
   bool engaged();
+  void setCmdUp(int cmdUp);
+  int getCmdUp();
+  void setCmdDown(int cmdDown);
+  int getCmdDown();
+  void setCmdPush(int cmdPush);
+  int getCmdPush();
 private:
   uint8_t _mux;
   uint8_t _pin1, _pin2, _pin3;
@@ -22,6 +28,9 @@ private:
   uint8_t _state;
   uint8_t _debounce;
   uint8_t _transition;
+  int _cmdUp;
+  int _cmdDown;
+  int _cmdPush;
 };
 
 #endif

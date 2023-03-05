@@ -72,7 +72,10 @@ public:
   XPLDirect(Stream *);
   void begin(const char *devicename); // parameter is name of your device for reference
   int connectionStatus(void);
-  int commandTrigger(int commandHandle); // triggers specified command 1 time;
+  int commandTrigger(int commandHandle);                    // triggers specified command 1 time;
+  int commandTrigger(int commandHandle, int triggerCount);  // triggers specified command triggerCount times.  
+  int commandStart(int commandHandle);
+  int commandEnd(int commandHandle);
   int datarefsUpdated();      // returns true if xplane has updated any datarefs since last call to datarefsUpdated()
   int hasUpdated(int handle); // returns true if xplane has updated this dataref since last call to hasUpdated()
   int registerDataRef(const XPLSTRING *, int, unsigned int, float, long int *);

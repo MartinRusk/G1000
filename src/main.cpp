@@ -66,6 +66,7 @@ Button btnComFF(3,15);
 
 // MUX4 Pan/Zoom
 Encoder encRange(4, 6, 5, 0, 2);
+Button btnPanPush(4, 0);
 RepeatButton btnPanUp(4, 1, 250);
 RepeatButton btnPanLeft(4, 2, 250);
 RepeatButton btnPanDown(4, 3, 250);
@@ -91,14 +92,14 @@ AnalogIn potInstr(A0, false, 10);
 AnalogIn potFlood(A1, false, 10);
 
 // LEDs
-LedShift ledMFD(16, 14, 15);
+LedShift leds(16, 14, 15);
 #define LED_FLAP_UP 0
 #define LED_FLAP_TO 1
 #define LED_FLAP_LDG 2
-#define LED_GEAR_UNSAFE 3
-#define LED_GEAR_NOSE 4
-#define LED_GEAR_LEFT 5
-#define LED_GEAR_RIGHT 6
+#define LED_GEAR_NOSE 3
+#define LED_GEAR_LEFT 4
+#define LED_GEAR_RIGHT 5
+#define LED_GEAR_UNSAFE 6
 
 // Timer for Main loop
 SoftTimer tmrMain(10.0);
@@ -207,18 +208,30 @@ void setup()
   Mux.addMux(7); // MUX 3
   Mux.addMux(8); // MUX 4
   Mux.addMux(9); // MUX 5
+  
+  // init led sequence
+  leds.set_all(ledOff);
+  for (int pin = 0; pin < 7; pin++)
+  {
+    leds.set(pin, ledOn);
+    leds.handle();
+    delay(200);
+  }
+  leds.set_all(ledOff);
 
   // Commands MUX 0
-  cmdNavInnerUp   = XP.registerCommand(F("sim/GPS/g1000n3_nav_inner_up"));
-  cmdNavInnerDown = XP.registerCommand(F("sim/GPS/g1000n3_nav_inner_down"));
-  cmdNavOuterUp   = XP.registerCommand(F("sim/GPS/g1000n3_nav_outer_up"));
-  cmdNavOuterDown = XP.registerCommand(F("sim/GPS/g1000n3_nav_outer_down"));
-  cmdNavToggle    = XP.registerCommand(F("sim/GPS/g1000n3_nav12"));
-  cmdComInnerUp   = XP.registerCommand(F("sim/GPS/g1000n3_com_inner_up"));
-  cmdComInnerDown = XP.registerCommand(F("sim/GPS/g1000n3_com_inner_down"));
-  cmdComOuterUp   = XP.registerCommand(F("sim/GPS/g1000n3_com_outer_up"));
-  cmdComOuterDown = XP.registerCommand(F("sim/GPS/g1000n3_com_outer_down"));
-  cmdComToggle    = XP.registerCommand(F("sim/GPS/g1000n3_com12"));
+  // implicit method
+  encNavInner.setCmdUp(XP.registerCommand(F("sim/GPS/g1000n3_nav_inner_up")));
+  encNavInner.setCmdDown(XP.registerCommand(F("sim/GPS/g1000n3_nav_inner_down")));
+  encNavOuter.setCmdUp(XP.registerCommand(F("sim/GPS/g1000n3_nav_outer_up")));
+  encNavOuter.setCmdDown(XP.registerCommand(F("sim/GPS/g1000n3_nav_outer_down")));
+  encNavInner.setCmdPush(XP.registerCommand(F("sim/GPS/g1000n3_nav12")));
+  encComInner.setCmdUp(XP.registerCommand(F("sim/GPS/g1000n3_com_inner_up")));
+  encComInner.setCmdDown(XP.registerCommand(F("sim/GPS/g1000n3_com_inner_down")));
+  encComOuter.setCmdUp(XP.registerCommand(F("sim/GPS/g1000n3_com_outer_up")));
+  encComOuter.setCmdDown(XP.registerCommand(F("sim/GPS/g1000n3_com_outer_down")));
+  encComInner.setCmdPush(XP.registerCommand(F("sim/GPS/g1000n3_com12")));
+  // explicit method
   cmdCourseUp     = XP.registerCommand(F("sim/GPS/g1000n3_crs_up"));
   cmdCourseDown   = XP.registerCommand(F("sim/GPS/g1000n3_crs_down"));
   cmdCourseSync   = XP.registerCommand(F("sim/GPS/g1000n3_crs_sync"));
@@ -297,134 +310,155 @@ void setup()
   // Serial.println(freeMemory(), DEC);
 }
 
+void handleDevice(Button *btn, int cmd)
+{
+  btn->handle();
+  if (btn->pressed())
+  {
+    XP.commandStart(cmd);
+  }
+  if (btn->released())
+  {
+    XP.commandEnd(cmd);
+  }
+}
+
+void handleDevice(Encoder *enc, int cmdUp, int cmdDown)
+{
+  enc->handle();
+  if (enc->up())
+  {
+    XP.commandTrigger(cmdUp);
+  }
+  if (enc->down())
+  {
+    XP.commandTrigger(cmdDown);
+  }
+}
+
+void handleDevice(Encoder *enc, int cmdUp, int cmdDown, int cmdPress)
+{
+  handleDevice(enc, cmdUp, cmdDown);
+  if (enc->pressed())
+  {
+    XP.commandStart(cmdPress);
+  }
+  if (enc->released())
+  {
+    XP.commandEnd(cmdPress);
+  }
+}
+
+void handleDevice(Encoder *enc)
+{
+  enc->handle();
+  if (enc->up())
+  {
+    XP.commandTrigger(enc->getCmdUp());
+  }
+  if (enc->down())
+  {
+    XP.commandTrigger(enc->getCmdDown());
+  }
+  int cmdPush = enc->getCmdPush();
+  if (cmdPush >= 0)
+  {
+    if (enc->pressed())
+    {
+      XP.commandStart(cmdPush);
+    }
+    if (enc->released())
+    {
+      XP.commandEnd(cmdPush);
+    }
+  }
+}
+
 // Main loop
 void loop()
 {
+  XP.xloop();
   Mux.handle();
+  leds.handle();
 
-  encNavInner.handle();
-  encNavOuter.handle();
-  encComInner.handle();
-  encComOuter.handle();
-  encCourse.handle();
-  encBaro.handle();
-  encAltInner.handle();
-  encAltOuter.handle();
-  encFMSInner.handle();
-  encFMSOuter.handle();
-  btnDirect.handle();
-  btnFPL.handle();
-  btnCLR.handle();
-  btnMENU.handle();
-  btnPROC.handle();
-  btnENT.handle();
-  btnAP.handle();
-  btnFD.handle();
-  btnNAV.handle();
-  btnALT.handle();
-  btnVS.handle();
-  btnFLC.handle();
-  btnYD.handle();
-  btnHDG.handle();
-  btnAPR.handle();
-  btnVNAV.handle();
-  btnUP.handle();
-  btnDN.handle();
-  encNavVol.handle();
-  btnNavFF.handle();
+  // handle all input devices directly connected to commands
+  // handleDevice(&encNavInner, cmdNavInnerUp, cmdNavInnerDown, cmdNavToggle);
+  // handleDevice(&encNavOuter, cmdNavOuterUp, cmdNavOuterDown);
+  // handleDevice(&encComInner, cmdComInnerUp, cmdComInnerDown, cmdComToggle);
+  // handleDevice(&encComOuter, cmdComOuterUp, cmdComOuterDown);
 
-  if (tmrMain.isTick())
+  handleDevice(&encNavInner);
+  handleDevice(&encNavOuter);
+  handleDevice(&encComInner);
+  handleDevice(&encComOuter);
+
+  handleDevice(&encCourse, cmdCourseUp, cmdCourseDown, cmdCourseSync);
+  handleDevice(&encBaro, cmdBaroUp, cmdBaroDown);
+  handleDevice(&encAltInner, cmdAltInnerUp, cmdAltInnerDown, cmdAltSync);
+  handleDevice(&encAltOuter, cmdAltOuterUp, cmdAltOuterDown);
+  handleDevice(&encFMSInner, cmdFMSInnerUp, cmdFMSInnerDown, cmdFMSCursor);
+  handleDevice(&encFMSOuter, cmdFMSOuterUp, cmdFMSOuterDown);
+  handleDevice(&btnDirect, cmdDirect);
+  handleDevice(&btnFPL, cmdFPL);
+  handleDevice(&btnCLR, cmdCLR);
+  handleDevice(&btnMENU, cmdMENU);
+  handleDevice(&btnPROC, cmdPROC);
+  handleDevice(&btnENT, cmdENT);
+  handleDevice(&btnAP, cmdAP);
+  handleDevice(&btnFD, cmdFD);
+  handleDevice(&btnNAV, cmdNAV);
+  handleDevice(&btnALT, cmdALT);
+  handleDevice(&btnVS, cmdVS);
+  handleDevice(&btnFLC, cmdFLC);
+  handleDevice(&btnYD, cmdYD);
+  handleDevice(&btnHDG, cmdHDG);
+  handleDevice(&btnAPR, cmdAPR);
+  handleDevice(&btnVNAV, cmdVNAV);
+  handleDevice(&btnUP, cmdUP);
+  handleDevice(&btnDN, cmdDN);
+  handleDevice(&encNavVol, cmdNavVolUp, cmdNavVolDown, cmdNavVol);
+  handleDevice(&btnNavFF, cmdNavFF);
+  handleDevice(&btnSoft1, cmdSoft1);
+  handleDevice(&btnSoft2, cmdSoft2);
+  handleDevice(&btnSoft3, cmdSoft3);
+  handleDevice(&btnSoft4, cmdSoft4);
+  handleDevice(&btnSoft5, cmdSoft5);
+  handleDevice(&btnSoft6, cmdSoft6);
+  handleDevice(&btnSoft7, cmdSoft7);
+  handleDevice(&btnSoft8, cmdSoft8);
+  handleDevice(&btnSoft9, cmdSoft9);
+  handleDevice(&btnSoft10, cmdSoft10);
+  handleDevice(&btnSoft11, cmdSoft11);
+  handleDevice(&btnSoft12, cmdSoft12);
+  handleDevice(&encComVol, cmdComVolUp, cmdComVolDown, cmdComVol);
+  handleDevice(&btnComFF, cmdComFF);
+  handleDevice(&encRange, cmdRangeUp, cmdRangeDown);
+  // handle pan stick manually due to logical operations for inputs
+  btnPanPush.handle(Mux.getBit(4, 0) && !Mux.getBit(4, 1) &&!Mux.getBit(4, 2) &&!Mux.getBit(4, 3) &&!Mux.getBit(4, 4));
+  if (btnPanPush.pressed())
   {
-    XP.xloop();
-    
-    // MUX 0
-    if (encNavInner.pressed())  XP.commandTrigger(cmdNavToggle);
-    if (encNavInner.up())       XP.commandTrigger(cmdNavInnerUp);
-    if (encNavInner.down())     XP.commandTrigger(cmdNavInnerDown);
-    if (encNavOuter.up())       XP.commandTrigger(cmdNavOuterUp);
-    if (encNavOuter.down())     XP.commandTrigger(cmdNavOuterDown);
-    if (encComInner.pressed())  XP.commandTrigger(cmdComToggle);
-    if (encComInner.up())       XP.commandTrigger(cmdComInnerUp);
-    if (encComInner.down())     XP.commandTrigger(cmdComInnerDown);
-    if (encComOuter.up())       XP.commandTrigger(cmdComOuterUp);
-    if (encComOuter.down())     XP.commandTrigger(cmdComOuterDown);
-    if (encCourse.pressed())    XP.commandTrigger(cmdCourseSync);
-    if (encCourse.up())         XP.commandTrigger(cmdCourseUp);
-    if (encCourse.down())       XP.commandTrigger(cmdCourseDown);
-    if (encBaro.up())           XP.commandTrigger(cmdBaroUp);
-    if (encBaro.down())         XP.commandTrigger(cmdBaroDown);
-
-    // MUX 1
-    if (encAltInner.pressed())  XP.commandTrigger(cmdAltSync);
-    if (encAltInner.up())       XP.commandTrigger(cmdAltInnerUp);
-    if (encAltInner.down())     XP.commandTrigger(cmdAltInnerDown);
-    if (encAltOuter.up())       XP.commandTrigger(cmdAltOuterUp);
-    if (encAltOuter.down())     XP.commandTrigger(cmdAltOuterDown);
-    if (encFMSInner.pressed())  XP.commandTrigger(cmdFMSCursor);
-    if (encFMSInner.up())       XP.commandTrigger(cmdFMSInnerDown);
-    if (encFMSInner.down())     XP.commandTrigger(cmdFMSInnerDown);
-    if (encFMSOuter.up())       XP.commandTrigger(cmdFMSOuterUp);
-    if (encFMSOuter.down())     XP.commandTrigger(cmdFMSOuterDown);
-    if (btnDirect.pressed())    XP.commandTrigger(cmdDirect);
-    if (btnFPL.pressed())       XP.commandTrigger(cmdFPL);
-    if (btnCLR.pressed())       XP.commandTrigger(cmdCLR);
-    if (btnMENU.pressed())      XP.commandTrigger(cmdMENU);
-    if (btnPROC.pressed())      XP.commandTrigger(cmdPROC);
-    if (btnENT.pressed())       XP.commandTrigger(cmdENT);
-
-    // MUX 2
-    if (btnAP.pressed())        XP.commandTrigger(cmdAP);
-    if (btnFD.pressed())        XP.commandTrigger(cmdFD);
-    if (btnNAV.pressed())       XP.commandTrigger(cmdNAV);
-    if (btnALT.pressed())       XP.commandTrigger(cmdALT);
-    if (btnVS.pressed())        XP.commandTrigger(cmdVS);
-    if (btnFLC.pressed())       XP.commandTrigger(cmdFLC);
-    if (btnYD.pressed())        XP.commandTrigger(cmdYD);
-    if (btnHDG.pressed())       XP.commandTrigger(cmdHDG);
-    if (btnAPR.pressed())       XP.commandTrigger(cmdAPR);
-    if (btnVNAV.pressed())      XP.commandTrigger(cmdVNAV);
-    if (btnUP.pressed())        XP.commandTrigger(cmdUP);
-    if (btnDN.pressed())        XP.commandTrigger(cmdDN);
-    if (encNavVol.up())         XP.commandTrigger(cmdNavVolUp);
-    if (encNavVol.down())       XP.commandTrigger(cmdNavVolDown);
-    if (encNavVol.pressed())    XP.commandTrigger(cmdNavVol);
-    if (btnNavFF.pressed())     XP.commandTrigger(cmdNavFF);
-
-    // MUX 3
-    if (btnSoft1.pressed())     XP.commandTrigger(cmdSoft1);
-    if (btnSoft2.pressed())     XP.commandTrigger(cmdSoft2);
-    if (btnSoft3.pressed())     XP.commandTrigger(cmdSoft3);
-    if (btnSoft4.pressed())     XP.commandTrigger(cmdSoft4);
-    if (btnSoft5.pressed())     XP.commandTrigger(cmdSoft5);
-    if (btnSoft6.pressed())     XP.commandTrigger(cmdSoft6);
-    if (btnSoft7.pressed())     XP.commandTrigger(cmdSoft7);
-    if (btnSoft8.pressed())     XP.commandTrigger(cmdSoft8);
-    if (btnSoft9.pressed())     XP.commandTrigger(cmdSoft9);
-    if (btnSoft10.pressed())    XP.commandTrigger(cmdSoft10);
-    if (btnSoft11.pressed())    XP.commandTrigger(cmdSoft11);
-    if (btnSoft12.pressed())    XP.commandTrigger(cmdSoft12);
-    if (encComVol.up())         XP.commandTrigger(cmdComVolUp);
-    if (encComVol.down())       XP.commandTrigger(cmdComVolDown);
-    if (encComVol.pressed())    XP.commandTrigger(cmdComVol);
-    if (btnComFF.pressed())     XP.commandTrigger(cmdComFF);
-
-    // MUX 4 
-    if (encRange.up())          XP.commandTrigger(cmdRangeUp);
-    if (encRange.down())        XP.commandTrigger(cmdRangeDown);
-    // TODO -> validate!
-    if (encRange.pressed() && !btnPanUp.engaged() && !btnPanLeft.engaged() && 
-        !btnPanDown.engaged() && !btnPanRight.engaged()) XP.commandTrigger(cmdPanPush);
-    if (btnPanUp.pressed() && encRange.engaged())    XP.commandTrigger(cmdPanUp);
-    if (btnPanLeft.pressed() && encRange.engaged())  XP.commandTrigger(cmdPanLeft);
-    if (btnPanDown.pressed() && encRange.engaged())  XP.commandTrigger(cmdPanDown);
-    if (btnPanRight.pressed() && encRange.engaged()) XP.commandTrigger(cmdPanRight);
-    if (encHeading.up())        XP.commandTrigger(cmdHeadingUp);
-    if (encHeading.down())      XP.commandTrigger(cmdHeadingDown);
-    if (encHeading.pressed())   XP.commandTrigger(cmdHeadingSync);
-
-    if (encRudderTrim.up())     XP.commandTrigger(cmdRudderTrimRight);
-    if (encRudderTrim.down())   XP.commandTrigger(cmdRudderTrimLeft);
-    if (encRudderTrim.pressed())XP.commandTrigger(cmdRudderTrimCenter);
-
+    XP.commandTrigger(cmdPanPush);
   }
+  btnPanUp.handle(Mux.getBit(4, 0) && Mux.getBit(4, 1));
+  if (btnPanUp.pressed())
+  {
+    XP.commandTrigger(cmdPanUp);
+  }
+  btnPanLeft.handle(Mux.getBit(4, 0) && Mux.getBit(4, 2));
+  if (btnPanLeft.pressed())
+  {
+    XP.commandTrigger(cmdPanLeft);
+  }
+  btnPanDown.handle(Mux.getBit(4, 0) && Mux.getBit(4, 3));
+  if (btnPanDown.pressed())
+  {
+    XP.commandTrigger(cmdPanDown);
+  }
+  btnPanRight.handle(Mux.getBit(4, 0) && Mux.getBit(4, 4));
+  if (btnPanRight.pressed())
+  {
+    XP.commandTrigger(cmdPanRight);
+  }
+
+  handleDevice(&encRudderTrim, cmdRudderTrimRight, cmdRudderTrimLeft, cmdRudderTrimCenter);
 }
