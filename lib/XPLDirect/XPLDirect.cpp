@@ -52,7 +52,7 @@ int XPLDirect::xloop(void)
           }
           break;
         case XPL_DATATYPE_FLOAT:
-          if (_dataRefs[i]->divider)
+          if (_dataRefs[i]->divider > 0)
           {
             *(float *)_dataRefs[i]->latestValue = ((int)(*(float *)_dataRefs[i]->latestValue / _dataRefs[i]->divider) * _dataRefs[i]->divider);
           }

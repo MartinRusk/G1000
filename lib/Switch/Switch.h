@@ -21,8 +21,8 @@ public:
 protected:
   uint8_t _mux;
   uint8_t _pin;
-  uint8_t _state;
   uint8_t _debounce;
+  eSwitch_t _state;
   int _cmdOff;
   int _cmdOn;
 };

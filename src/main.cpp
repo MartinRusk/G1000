@@ -86,8 +86,8 @@ Switch swGear(5, 11);
 Switch2 swFlaps(5, 12, 13);
 
 // Potentiometers
-AnalogIn potInstr(A0, false, 10);
-AnalogIn potFlood(A1, false, 10);
+AnalogIn potInstr(0, false, 10);
+AnalogIn potFlood(1, false, 10);
 
 // LEDs
 LedShift leds(16, 14, 15);
@@ -276,17 +276,17 @@ void setup()
       XP.registerCommand(F("aerobask/gear_test")));
 
   swLightStrobe.setCommand(
-      XP.registerCommand(F("sim/lights/strobe_lights_on")),
-      XP.registerCommand(F("sim/lights/strobe_lights_off")));
+      XP.registerCommand(F("sim/lights/strobe_lights_off")),
+      XP.registerCommand(F("sim/lights/strobe_lights_on")));
   swLightPosition.setCommand(
-      XP.registerCommand(F("sim/lights/nav_lights_on")),
-      XP.registerCommand(F("sim/lights/nav_lights_off")));
+      XP.registerCommand(F("sim/lights/nav_lights_off")),
+      XP.registerCommand(F("sim/lights/nav_lights_on")));
   swLightTaxi.setCommand(
-      XP.registerCommand(F("sim/lights/taxi_lights_on")),
-      XP.registerCommand(F("sim/lights/taxi_lights_off")));
+      XP.registerCommand(F("sim/lights/taxi_lights_off")),
+      XP.registerCommand(F("sim/lights/taxi_lights_on")));
   swLightLanding.setCommand(
-      XP.registerCommand(F("sim/lights/landing_lights_on")),
-      XP.registerCommand(F("sim/lights/landing_lights_off")));
+      XP.registerCommand(F("sim/lights/landing_lights_ooff")),
+      XP.registerCommand(F("sim/lights/landing_lights_on")));
   swFuelAuxLeft.setCommand(
       XP.registerCommand(F("aerobask/auxfuel/pump1_up")),
       XP.registerCommand(F("aerobask/auxfuel/pump1_dn")));
@@ -294,19 +294,20 @@ void setup()
       XP.registerCommand(F("aerobask/auxfuel/pump2_up")),
       XP.registerCommand(F("aerobask/auxfuel/pump2_dn")));
 
-  XP.registerDataRef(F("sim/flightmodel2/gear/deploy_ratio"), XPL_READ, 100, 1.0, &gear_ratio[0], 0);
-  XP.registerDataRef(F("sim/flightmodel2/gear/deploy_ratio"), XPL_READ, 100, 1.0, &gear_ratio[1], 1);
-  XP.registerDataRef(F("sim/flightmodel2/gear/deploy_ratio"), XPL_READ, 100, 1.0, &gear_ratio[2], 2);
-  XP.registerDataRef(F("sim/cockpit/warnings/annunciators/gear_unsafe"), XPL_READ, 100, 1.0, &gear_unsafe);
-  XP.registerDataRef(F("sim/flightmodel2/controls/flap1_deploy_ratio"), XPL_READ, 100, 1.0, &flap_ratio);
+  XP.registerDataRef(F("sim/flightmodel2/gear/deploy_ratio"), XPL_READ, 100, 0, &gear_ratio[0], 0);
+  XP.registerDataRef(F("sim/flightmodel2/gear/deploy_ratio"), XPL_READ, 100, 0, &gear_ratio[1], 1);
+  XP.registerDataRef(F("sim/flightmodel2/gear/deploy_ratio"), XPL_READ, 100, 0, &gear_ratio[2], 2);
+  // XP.registerDataRef(F("sim/cockpit2/annunciators/gear_unsafe"), XPL_READ, 100, 1.0, &gear_unsafe);
+  XP.registerDataRef(F("sim/cockpit/warnings/annunciators/gear_unsafe"), XPL_READ, 100, 0, &gear_unsafe);
+  XP.registerDataRef(F("sim/flightmodel2/controls/flap1_deploy_ratio"), XPL_READ, 100, 0, &flap_ratio);
 
-  XP.registerDataRef(F("sim/cockpit2/switches/instrument_brightness_ratio"), XPL_WRITE, 100, 1.0, &light_instr, 0);
-  XP.registerDataRef(F("sim/cockpit2/switches/panel_brightness_ratio"), XPL_WRITE, 100, 1.0, &light_flood, 0);
+  XP.registerDataRef(F("sim/cockpit2/switches/instrument_brightness_ratio"), XPL_READWRITE, 100, 0, &light_instr, 0);
+  XP.registerDataRef(F("sim/cockpit2/switches/panel_brightness_ratio"), XPL_READWRITE, 100, 0, &light_flood, 0);
 
-  XP.registerDataRef(F("sim/cockpit2/controls/gear_handle_down"), XPL_WRITE, 100, 1.0, &gear_handle_down);
-  XP.registerDataRef(F("sim/cockpit2/controls/flap_handle_request_ratio"), XPL_WRITE, 100, 1.0, &flap_handle_request_ratio);
-  XP.registerDataRef(F("aerobask/eng/sw_fuel_lever1"), XPL_WRITE, 100, 1.0, &sw_fuel_lever1);
-  XP.registerDataRef(F("aerobask/eng/sw_fuel_lever2"), XPL_WRITE, 100, 1.0, &sw_fuel_lever2);
+  XP.registerDataRef(F("sim/cockpit2/controls/gear_handle_down"), XPL_READWRITE, 100, 0, &gear_handle_down);
+  XP.registerDataRef(F("sim/cockpit2/controls/flap_handle_request_ratio"), XPL_READWRITE, 100, 0, &flap_handle_request_ratio);
+  XP.registerDataRef(F("aerobask/eng/sw_fuel_lever1"), XPL_READWRITE, 100, 0, &sw_fuel_lever1);
+  XP.registerDataRef(F("aerobask/eng/sw_fuel_lever2"), XPL_READWRITE, 100, 0, &sw_fuel_lever2);
 }
 
 void handleCommand(Button *btn)
@@ -439,25 +440,27 @@ void loop()
   handleCommand(&swLightTaxi);
   handleCommand(&swLightLanding);
 
-  // if (tmrSync.isTick())
-  // {
-  //   XP.commandTrigger(swLightStrobe.getCommand());
-  //   XP.commandTrigger(swLightPosition.getCommand());
-  //   XP.commandTrigger(swLightTaxi.getCommand());
-  //   XP.commandTrigger(swLightLanding.getCommand());
-  // }
+  if (tmrSync.isTick())
+  {
+    XP.commandTrigger(swLightStrobe.getCommand());
+    XP.commandTrigger(swLightPosition.getCommand());
+    XP.commandTrigger(swLightTaxi.getCommand());
+    XP.commandTrigger(swLightLanding.getCommand());
+    XP.commandTrigger(swFuelAuxLeft.getCommand());
+    XP.commandTrigger(swFuelAuxRight.getCommand());
+  }
 
   swFlaps.handle();
   eSwitch_t state = swFlaps.state();
-  flap_handle_request_ratio = (state == eSwitchOn) ? 0.0 : (state == eSwitchOn) ? 1.0 : 0.5;
+  flap_handle_request_ratio = (state == eSwitchOn) ? 1.0 : (state == eSwitchOn2) ? 0.0 : 0.5;
   swGear.handle();
   gear_handle_down = (swGear.state() == eSwitchOn) ? 0.0 : 1.0;
   swFuelLeft.handle();
   state = swFuelLeft.state();
-  sw_fuel_lever1 = (state == eSwitchOn) ? 0 : (state == eSwitchOn) ? 2 : 1;
+  sw_fuel_lever1 = (state == eSwitchOn) ? 2 : (state == eSwitchOn2) ? 0 : 1;
   swFuelRight.handle();
   state = swFuelRight.state();
-  sw_fuel_lever2 = (state == eSwitchOn) ? 0 : (state == eSwitchOn) ? 2 : 1;
+  sw_fuel_lever2 = (state == eSwitchOn) ? 2 : (state == eSwitchOn2) ? 0 : 1;
   
   light_instr = potInstr.value();
   light_flood = potFlood.value();
@@ -497,13 +500,21 @@ void loop()
   leds.set(LED_GEAR_NOSE, (gear_ratio[0] > 0.99) ? ledOn : ledOff);
   leds.set(LED_GEAR_LEFT, (gear_ratio[1] > 0.99) ? ledOn : ledOff);
   leds.set(LED_GEAR_RIGHT, (gear_ratio[2] > 0.99) ? ledOn : ledOff);
-  leds.set(LED_GEAR_UNSAFE, gear_unsafe ? ledMedium : ledOff);
+  leds.set(LED_GEAR_UNSAFE, (gear_unsafe > 0) ? ledMedium : ledOff);
 
 #if DEBUG
   static int count = 0;
   if (tmrMain.isTick())
   {
-    Serial.print("Memory: ");
+    Serial.print("Flap: ");
+    Serial.print(swFlaps.state());
+    Serial.print(" Flap: ");
+    Serial.print(flap_handle_request_ratio);
+    Serial.print(" Instr: ");
+    Serial.print(light_instr);
+    Serial.print(" Flood: ");
+    Serial.print(light_flood);
+    Serial.print(" Memory: ");
     Serial.print(freeMemory());
     Serial.print(" Cycle count: ");
     Serial.println(count);

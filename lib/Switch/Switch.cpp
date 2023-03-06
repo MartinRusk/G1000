@@ -45,11 +45,7 @@ bool Switch::handle()
 
 eSwitch_t Switch::state()
 {
-  if (_state)
-  {
-    return eSwitchOn;
-  }
-  return eSwitchOff;
+  return _state;
 }
 
 void Switch::setCommand(int cmdOff, int cmdOn)
