@@ -9,6 +9,8 @@
 #include <SoftTimer.h>
 #include <XPLDirect.h>
 
+// #define DEBUG 1
+
 // Interface
 XPLDirect XP(&Serial);
 
@@ -46,7 +48,7 @@ Button btnVNAV(2, 9);
 Button btnUP(2, 10);
 Button btnDN(2, 11);
 Encoder encNavVol(2, 12, 13, 14, 4);
-Button btnNavFF(2,15);
+Button btnNavFF(2, 15);
 
 // MUX3
 Button btnSoft1(3, 0);
@@ -62,7 +64,7 @@ Button btnSoft10(3, 9);
 Button btnSoft11(3, 10);
 Button btnSoft12(3, 11);
 Encoder encComVol(3, 12, 13, 14, 4);
-Button btnComFF(3,15);
+Button btnComFF(3, 15);
 
 // MUX4 Pan/Zoom
 Encoder encRange(4, 6, 5, 0, 2);
@@ -102,95 +104,7 @@ LedShift leds(16, 14, 15);
 #define LED_GEAR_UNSAFE 6
 
 // Timer for Main loop
-SoftTimer tmrMain(100.0);
-
-// Commands MUX 0
-int cmdNavInnerUp;
-int cmdNavInnerDown;
-int cmdNavOuterUp;
-int cmdNavOuterDown;
-int cmdNavToggle;
-int cmdComInnerUp;
-int cmdComInnerDown;
-int cmdComOuterUp;
-int cmdComOuterDown;
-int cmdComToggle;
-int cmdCourseUp;
-int cmdCourseDown;
-int cmdCourseSync;
-int cmdBaroUp;
-int cmdBaroDown;
-
-// Commands MUX 1
-int cmdAltSync;
-int cmdAltInnerUp;
-int cmdAltInnerDown;
-int cmdAltOuterUp;
-int cmdAltOuterDown;
-int cmdFMSCursor;
-int cmdFMSInnerUp;
-int cmdFMSInnerDown;
-int cmdFMSOuterUp;
-int cmdFMSOuterDown;
-int cmdDirect;
-int cmdFPL;
-int cmdCLR;
-int cmdMENU;
-int cmdPROC;
-int cmdENT;
-
-// Commands MUX 2
-int cmdAP;
-int cmdFD;
-int cmdNAV;
-int cmdALT;
-int cmdVS;
-int cmdFLC;
-int cmdYD;
-int cmdHDG;
-int cmdAPR;
-int cmdVNAV;
-int cmdUP;
-int cmdDN;
-int cmdNavVolUp;
-int cmdNavVolDown;
-int cmdNavVol;
-int cmdNavFF;
-
-// Commands MUX 3
-int cmdSoft1;
-int cmdSoft2;
-int cmdSoft3;
-int cmdSoft4;
-int cmdSoft5;
-int cmdSoft6;
-int cmdSoft7;
-int cmdSoft8;
-int cmdSoft9;
-int cmdSoft10;
-int cmdSoft11;
-int cmdSoft12;
-int cmdComVolUp;
-int cmdComVolDown;
-int cmdComVol;
-int cmdComFF;
-
-// Commands MUX 4
-int cmdRangeUp;
-int cmdRangeDown;
-int cmdPanPush;
-int cmdPanUp;
-int cmdPanLeft;
-int cmdPanDown;
-int cmdPanRight;
-int cmdHeadingUp;
-int cmdHeadingDown;
-int cmdHeadingSync;
-
-// Commands MFD
-int cmdRudderTrimLeft;
-int cmdRudderTrimRight;
-int cmdRudderTrimCenter;
+SoftTimer tmrMain(1000.0);
 
 // DataRefs MUX 5
 float gear_ratio[3];
@@ -211,130 +125,174 @@ long int sw_auxpump2 = 0;
 long int sw_fuel_lever1 = 2;
 long int sw_fuel_lever2 = 2;
 
-// Setup 
+// Setup
 void setup()
 {
   Serial.begin(XPLDIRECT_BAUDRATE);
   XP.begin("G1000 MFD");
 
   // Setup Multiplexers
-  Mux.begin(1, 0, 2, 3); 
+  Mux.begin(1, 0, 2, 3);
   Mux.addMux(4); // MUX 0
   Mux.addMux(5); // MUX 1
   Mux.addMux(6); // MUX 2
   Mux.addMux(7); // MUX 3
   Mux.addMux(8); // MUX 4
   Mux.addMux(9); // MUX 5
-  
+
   // init led sequence
   leds.set_all(ledOff);
   for (int pin = 0; pin < 7; pin++)
   {
     leds.set(pin, ledOn);
     leds.handle();
-    delay(200);
+    delay(100);
   }
   leds.set_all(ledOff);
 
-  // Commands MUX 0
-  // implicit method
-  encNavInner.setCmdUp(XP.registerCommand(F("sim/GPS/g1000n3_nav_inner_up")));
-  encNavInner.setCmdDown(XP.registerCommand(F("sim/GPS/g1000n3_nav_inner_down")));
-  encNavOuter.setCmdUp(XP.registerCommand(F("sim/GPS/g1000n3_nav_outer_up")));
-  encNavOuter.setCmdDown(XP.registerCommand(F("sim/GPS/g1000n3_nav_outer_down")));
-  encNavInner.setCmdPush(XP.registerCommand(F("sim/GPS/g1000n3_nav12")));
-  encComInner.setCmdUp(XP.registerCommand(F("sim/GPS/g1000n3_com_inner_up")));
-  encComInner.setCmdDown(XP.registerCommand(F("sim/GPS/g1000n3_com_inner_down")));
-  encComOuter.setCmdUp(XP.registerCommand(F("sim/GPS/g1000n3_com_outer_up")));
-  encComOuter.setCmdDown(XP.registerCommand(F("sim/GPS/g1000n3_com_outer_down")));
-  encComInner.setCmdPush(XP.registerCommand(F("sim/GPS/g1000n3_com12")));
-  // explicit method
-  cmdCourseUp     = XP.registerCommand(F("sim/GPS/g1000n3_crs_up"));
-  cmdCourseDown   = XP.registerCommand(F("sim/GPS/g1000n3_crs_down"));
-  cmdCourseSync   = XP.registerCommand(F("sim/GPS/g1000n3_crs_sync"));
-  cmdBaroUp       = XP.registerCommand(F("sim/GPS/g1000n3_baro_up"));
-  cmdBaroDown     = XP.registerCommand(F("sim/GPS/g1000n3_baro_down"));
-  
-  // Commands MUX 1
-  cmdAltSync      = XP.registerCommand(F("sim/autopilot/altitude_sync"));
-  cmdAltInnerUp   = XP.registerCommand(F("sim/GPS/g1000n3_alt_inner_up"));
-  cmdAltInnerDown = XP.registerCommand(F("sim/GPS/g1000n3_alt_inner_down"));
-  cmdAltOuterUp   = XP.registerCommand(F("sim/GPS/g1000n3_alt_outer_up"));
-  cmdAltOuterDown = XP.registerCommand(F("sim/GPS/g1000n3_alt_outer_down"));
-  cmdFMSCursor    = XP.registerCommand(F("sim/GPS/g1000n3_cursor"));
-  cmdFMSInnerUp   = XP.registerCommand(F("sim/GPS/g1000n3_fms_inner_up"));
-  cmdFMSInnerDown = XP.registerCommand(F("sim/GPS/g1000n3_fms_inner_down"));
-  cmdFMSOuterUp   = XP.registerCommand(F("sim/GPS/g1000n3_fms_outer_up"));
-  cmdFMSOuterDown = XP.registerCommand(F("sim/GPS/g1000n3_fms_outer_down"));
-  cmdDirect       = XP.registerCommand(F("sim/GPS/g1000n3_direct"));
-  cmdFPL          = XP.registerCommand(F("sim/GPS/g1000n3_fpl"));
-  cmdCLR          = XP.registerCommand(F("sim/GPS/g1000n3_clr"));
-  cmdMENU         = XP.registerCommand(F("sim/GPS/g1000n3_menu"));
-  cmdPROC         = XP.registerCommand(F("sim/GPS/g1000n3_proc"));
-  cmdENT          = XP.registerCommand(F("sim/GPS/g1000n3_ent"));
-  
+  encNavInner.setCommand(
+      XP.registerCommand(F("sim/GPS/g1000n3_nav_inner_up")),
+      XP.registerCommand(F("sim/GPS/g1000n3_nav_inner_down")),
+      XP.registerCommand(F("sim/GPS/g1000n3_nav12")));
+  encNavOuter.setCommand(
+      XP.registerCommand(F("sim/GPS/g1000n3_nav_outer_up")),
+      XP.registerCommand(F("sim/GPS/g1000n3_nav_outer_down")));
+  encComInner.setCommand(
+      XP.registerCommand(F("sim/GPS/g1000n3_com_inner_up")),
+      XP.registerCommand(F("sim/GPS/g1000n3_com_inner_down")),
+      XP.registerCommand(F("sim/GPS/g1000n3_com12")));
+  encComOuter.setCommand(
+      XP.registerCommand(F("sim/GPS/g1000n3_com_outer_up")),
+      XP.registerCommand(F("sim/GPS/g1000n3_com_outer_down")));
+  encCourse.setCommand(
+      XP.registerCommand(F("sim/GPS/g1000n3_crs_up")),
+      XP.registerCommand(F("sim/GPS/g1000n3_crs_down")),
+      XP.registerCommand(F("sim/GPS/g1000n3_crs_sync")));
+  encBaro.setCommand(
+      XP.registerCommand(F("sim/GPS/g1000n3_baro_up")),
+      XP.registerCommand(F("sim/GPS/g1000n3_baro_down")));
+  encAltInner.setCommand(
+      XP.registerCommand(F("sim/GPS/g1000n3_alt_inner_up")),
+      XP.registerCommand(F("sim/GPS/g1000n3_alt_inner_down")),
+      XP.registerCommand(F("sim/autopilot/altitude_sync")));
+  encAltOuter.setCommand(
+      XP.registerCommand(F("sim/GPS/g1000n3_alt_outer_up")),
+      XP.registerCommand(F("sim/GPS/g1000n3_alt_outer_down")));
+  encFMSInner.setCommand(
+      XP.registerCommand(F("sim/GPS/g1000n3_fms_inner_up")),
+      XP.registerCommand(F("sim/GPS/g1000n3_fms_inner_down")),
+      XP.registerCommand(F("sim/GPS/g1000n3_cursor")));
+  encFMSOuter.setCommand(
+      XP.registerCommand(F("sim/GPS/g1000n3_fms_outer_up")),
+      XP.registerCommand(F("sim/GPS/g1000n3_fms_outer_down")));
+  btnDirect.setCommand(
+      XP.registerCommand(F("sim/GPS/g1000n3_direct")));
+  btnFPL.setCommand(
+      XP.registerCommand(F("sim/GPS/g1000n3_fpl")));
+  btnCLR.setCommand(
+      XP.registerCommand(F("sim/GPS/g1000n3_clr")));
+  btnMENU.setCommand(
+      XP.registerCommand(F("sim/GPS/g1000n3_menu")));
+  btnPROC.setCommand(
+      XP.registerCommand(F("sim/GPS/g1000n3_proc")));
+  btnENT.setCommand(
+      XP.registerCommand(F("sim/GPS/g1000n3_ent")));
+
   // Commands MUX 2
-  cmdAP           = XP.registerCommand(F("sim/GPS/g1000n3_ap"));
-  cmdFD           = XP.registerCommand(F("sim/GPS/g1000n3_fd"));
-  cmdNAV          = XP.registerCommand(F("sim/GPS/g1000n3_nav"));
-  cmdALT          = XP.registerCommand(F("sim/GPS/g1000n3_alt"));
-  cmdVS           = XP.registerCommand(F("sim/GPS/g1000n3_vs"));
-  cmdFLC          = XP.registerCommand(F("sim/GPS/g1000n3_flc"));
-  cmdYD           = XP.registerCommand(F("sim/systems/yaw_damper_toggle"));
-  cmdHDG          = XP.registerCommand(F("sim/GPS/g1000n3_hdg"));
-  cmdAPR          = XP.registerCommand(F("sim/GPS/g1000n3_apr"));
-  cmdVNAV         = XP.registerCommand(F("sim/GPS/g1000n3_vnv"));
-  cmdUP           = XP.registerCommand(F("sim/GPS/g1000n3_nose_up"));
-  cmdDN           = XP.registerCommand(F("sim/GPS/g1000n3_nose_down"));
-  cmdNavVolUp     = XP.registerCommand(F("sim/GPS/g1000n3_nvol_up"));
-  cmdNavVolDown   = XP.registerCommand(F("sim/GPS/g1000n3_nvol_dn"));
-  cmdNavVol       = XP.registerCommand(F("sim/GPS/g1000n3_nvol"));
-  cmdNavFF        = XP.registerCommand(F("sim/GPS/g1000n3_nav_ff"));
+  btnAP.setCommand(
+      XP.registerCommand(F("sim/GPS/g1000n3_ap")));
+  btnFD.setCommand(
+      XP.registerCommand(F("sim/GPS/g1000n3_fd")));
+  btnNAV.setCommand(
+      XP.registerCommand(F("sim/GPS/g1000n3_nav")));
+  btnALT.setCommand(
+      XP.registerCommand(F("sim/GPS/g1000n3_alt")));
+  btnVS.setCommand(
+      XP.registerCommand(F("sim/GPS/g1000n3_vs")));
+  btnFLC.setCommand(
+      XP.registerCommand(F("sim/GPS/g1000n3_flc")));
+  btnYD.setCommand(
+      XP.registerCommand(F("sim/systems/yaw_damper_toggle")));
+  btnHDG.setCommand(
+      XP.registerCommand(F("sim/GPS/g1000n3_hdg")));
+  btnAPR.setCommand(
+      XP.registerCommand(F("sim/GPS/g1000n3_apr")));
+  btnVNAV.setCommand(
+      XP.registerCommand(F("sim/GPS/g1000n3_vnv")));
+  btnUP.setCommand(
+      XP.registerCommand(F("sim/GPS/g1000n3_nose_up")));
+  btnDN.setCommand(
+      XP.registerCommand(F("sim/GPS/g1000n3_nose_down")));
+  encNavVol.setCommand(
+      XP.registerCommand(F("sim/GPS/g1000n3_nvol_up")),
+      XP.registerCommand(F("sim/GPS/g1000n3_nvol_dn")),
+      XP.registerCommand(F("sim/GPS/g1000n3_nvol")));
+  btnNavFF.setCommand(
+      XP.registerCommand(F("sim/GPS/g1000n3_nav_ff")));
 
   // Commands MUX 3
-  cmdSoft1        = XP.registerCommand(F("sim/GPS/g1000n3_softkey1"));
-  cmdSoft2        = XP.registerCommand(F("sim/GPS/g1000n3_softkey2"));
-  cmdSoft3        = XP.registerCommand(F("sim/GPS/g1000n3_softkey3"));
-  cmdSoft4        = XP.registerCommand(F("sim/GPS/g1000n3_softkey4"));
-  cmdSoft5        = XP.registerCommand(F("sim/GPS/g1000n3_softkey5"));
-  cmdSoft6        = XP.registerCommand(F("sim/GPS/g1000n3_softkey6"));
-  cmdSoft7        = XP.registerCommand(F("sim/GPS/g1000n3_softkey7"));
-  cmdSoft8        = XP.registerCommand(F("sim/GPS/g1000n3_softkey8"));
-  cmdSoft9        = XP.registerCommand(F("sim/GPS/g1000n3_softkey9"));
-  cmdSoft10       = XP.registerCommand(F("sim/GPS/g1000n3_softkey10"));
-  cmdSoft11       = XP.registerCommand(F("sim/GPS/g1000n3_softkey11"));
-  cmdSoft12       = XP.registerCommand(F("sim/GPS/g1000n3_softkey12"));
-  cmdComVolUp     = XP.registerCommand(F("sim/GPS/g1000n3_cvol_up"));
-  cmdComVolDown   = XP.registerCommand(F("sim/GPS/g1000n3_cvol_dn"));
-  cmdComVol       = XP.registerCommand(F("sim/audio_panel/monitor_audio_com2"));
-  cmdComFF        = XP.registerCommand(F("sim/GPS/g1000n3_com_ff"));
-
-  // Commands MUX 4
-  cmdRangeUp      = XP.registerCommand(F("sim/GPS/g1000n3_range_up"));
-  cmdRangeDown    = XP.registerCommand(F("sim/GPS/g1000n3_range_down"));
-  cmdPanPush      = XP.registerCommand(F("sim/GPS/g1000n3_pan_push"));
-  cmdPanUp        = XP.registerCommand(F("sim/GPS/g1000n3_pan_up"));
-  cmdPanLeft      = XP.registerCommand(F("sim/GPS/g1000n3_pan_left"));
-  cmdPanDown      = XP.registerCommand(F("sim/GPS/g1000n3_pan_down"));
-  cmdPanRight     = XP.registerCommand(F("sim/GPS/g1000n3_pan_right"));
-  cmdHeadingUp    = XP.registerCommand(F("sim/GPS/g1000n3_hdg_up"));
-  cmdHeadingDown  = XP.registerCommand(F("sim/GPS/g1000n3_hdg_down"));
-  cmdHeadingSync  = XP.registerCommand(F("sim/GPS/g1000n3_hdg_sync"));
-
-  // MFD
-  // XP.registerCommand(F(""))
-  encRudderTrim.setCmdUp(XP.registerCommand(F("sim/flight_controls/rudder_trim_right")));
-  encRudderTrim.setCmdDown(XP.registerCommand(F("sim/flight_controls/rudder_trim_left")));
-  encRudderTrim.setCmdPush(XP.registerCommand(F("sim/flight_controls/rudder_trim_center")));
-  btnGearTest.setCmd(XP.registerCommand(F("aerobask/gear_test")));
+  btnSoft1.setCommand(
+      XP.registerCommand(F("sim/GPS/g1000n3_softkey1")));
+  btnSoft2.setCommand(
+      XP.registerCommand(F("sim/GPS/g1000n3_softkey2")));
+  btnSoft3.setCommand(
+      XP.registerCommand(F("sim/GPS/g1000n3_softkey3")));
+  btnSoft4.setCommand(
+      XP.registerCommand(F("sim/GPS/g1000n3_softkey4")));
+  btnSoft5.setCommand(
+      XP.registerCommand(F("sim/GPS/g1000n3_softkey5")));
+  btnSoft6.setCommand(
+      XP.registerCommand(F("sim/GPS/g1000n3_softkey6")));
+  btnSoft7.setCommand(
+      XP.registerCommand(F("sim/GPS/g1000n3_softkey7")));
+  btnSoft8.setCommand(
+      XP.registerCommand(F("sim/GPS/g1000n3_softkey8")));
+  btnSoft9.setCommand(
+      XP.registerCommand(F("sim/GPS/g1000n3_softkey9")));
+  btnSoft10.setCommand(
+      XP.registerCommand(F("sim/GPS/g1000n3_softkey10")));
+  btnSoft11.setCommand(
+      XP.registerCommand(F("sim/GPS/g1000n3_softkey11")));
+  btnSoft12.setCommand(
+      XP.registerCommand(F("sim/GPS/g1000n3_softkey12")));
+  encComVol.setCommand(
+      XP.registerCommand(F("sim/GPS/g1000n3_cvol_up")),
+      XP.registerCommand(F("sim/GPS/g1000n3_cvol_dn")),
+      XP.registerCommand(F("sim/audio_panel/monitor_audio_com2")));
+  btnComFF.setCommand(
+      XP.registerCommand(F("sim/GPS/g1000n3_com_ff")));
+  encRange.setCommand(
+      XP.registerCommand(F("sim/GPS/g1000n3_range_up")),
+      XP.registerCommand(F("sim/GPS/g1000n3_range_down")));
+  btnPanPush.setCommand(
+      XP.registerCommand(F("sim/GPS/g1000n3_pan_push")));
+  btnPanUp.setCommand(
+      XP.registerCommand(F("sim/GPS/g1000n3_pan_up")));
+  btnPanLeft.setCommand(
+      XP.registerCommand(F("sim/GPS/g1000n3_pan_left")));
+  btnPanDown.setCommand(
+      XP.registerCommand(F("sim/GPS/g1000n3_pan_down")));
+  btnPanRight.setCommand(
+      XP.registerCommand(F("sim/GPS/g1000n3_pan_right")));
+  encHeading.setCommand(
+      XP.registerCommand(F("sim/GPS/g1000n3_hdg_up")),
+      XP.registerCommand(F("sim/GPS/g1000n3_hdg_down")),
+      XP.registerCommand(F("sim/GPS/g1000n3_hdg_sync")));
+  encRudderTrim.setCommand(
+      XP.registerCommand(F("sim/flight_controls/rudder_trim_right")),
+      XP.registerCommand(F("sim/flight_controls/rudder_trim_left")),
+      XP.registerCommand(F("sim/flight_controls/rudder_trim_center")));
+  btnGearTest.setCommand(
+      XP.registerCommand(F("aerobask/gear_test")));
 
   XP.registerDataRef(F("sim/flightmodel2/gear/deploy_ratio"), XPL_READ, 100, 1.0, &gear_ratio[0], 0);
   XP.registerDataRef(F("sim/flightmodel2/gear/deploy_ratio"), XPL_READ, 100, 1.0, &gear_ratio[1], 1);
   XP.registerDataRef(F("sim/flightmodel2/gear/deploy_ratio"), XPL_READ, 100, 1.0, &gear_ratio[2], 2);
   XP.registerDataRef(F("sim/cockpit/warnings/annunciators/gear_unsafe"), XPL_READ, 100, 1.0, &gear_unsafe);
-  XP.registerDataRef(F("sim/flightmodel2/controls/flap1_deploy_ratio"), XPL_READ, 100, 1.0, &flap_ratio);  
+  XP.registerDataRef(F("sim/flightmodel2/controls/flap1_deploy_ratio"), XPL_READ, 100, 1.0, &flap_ratio);
   // XP.registerDataRef(F("sim/cockpit2/switches/instrument_brightness_ratio"), XPL_WRITE, 100, 1.0, &light_instr, 0);
   // XP.registerDataRef(F("sim/cockpit2/switches/panel_brightness_ratio"), XPL_WRITE, 100, 1.0, &light_flood, 0);
+
 
   XP.registerDataRef(F("sim/cockpit2/controls/gear_handle_down"), XPL_WRITE, 100, 1.0, &gear_handle_down);
   XP.registerDataRef(F("sim/cockpit2/controls/flap_handle_request_ratio"), XPL_WRITE, 100, 1.0, &flap_handle_request_ratio);
@@ -344,66 +302,55 @@ void setup()
   XP.registerDataRef(F("sim/cockpit2/switches/taxi_light_on"), XPL_WRITE, 100, 1.0, &taxi_light_on);
   XP.registerDataRef(F("sim/cockpit2/switches/landing_lights_on"), XPL_WRITE, 100, 1.0, &landing_lights_on);
 
-  // XP.registerDataRef(F("aerobask/auxfuel/sw_auxpump1"), XPL_WRITE, 100, 1.0, &sw_auxpump1);
-  // XP.registerDataRef(F("aerobask/auxfuel/sw_auxpump2"), XPL_WRITE, 100, 1.0, &sw_auxpump2);
+  XP.registerDataRef(F("aerobask/auxfuel/sw_auxpump1"), XPL_WRITE, 100, 1.0, &sw_auxpump1);
+  XP.registerDataRef(F("aerobask/auxfuel/sw_auxpump2"), XPL_WRITE, 100, 1.0, &sw_auxpump2);
   // XP.registerDataRef(F("aerobask/eng/sw_fuel_lever1"), XPL_WRITE, 100, 1.0, &sw_fuel_lever1);
   // XP.registerDataRef(F("aerobask/eng/sw_fuel_lever2"), XPL_WRITE, 100, 1.0, &sw_fuel_lever2);
 
   // delay(5000);
-  Serial.println(freeMemory(), DEC);
+  // Serial.println(freeMemory(), DEC);
 }
 
-void handleDevice(Button *btn, int cmd)
+void handleCommand(Button *btn)
 {
   btn->handle();
+  int cmdPush = btn->getCommand();
   if (btn->pressed())
   {
-    XP.commandStart(cmd);
+    XP.commandStart(cmdPush);
   }
   if (btn->released())
   {
-    XP.commandEnd(cmd);
+    XP.commandEnd(cmdPush);
   }
 }
 
-void handleDevice(Encoder *enc, int cmdUp, int cmdDown)
+void handleCommand(Button *btn, bool input)
+{
+  btn->handle(input);
+  int cmdPush = btn->getCommand();
+  if (btn->pressed())
+  {
+    XP.commandStart(cmdPush);
+  }
+  if (btn->released())
+  {
+    XP.commandEnd(cmdPush);
+  }
+}
+
+void handleCommand(Encoder *enc)
 {
   enc->handle();
   if (enc->up())
   {
-    XP.commandTrigger(cmdUp);
+    XP.commandTrigger(enc->getCommand(eUp));
   }
   if (enc->down())
   {
-    XP.commandTrigger(cmdDown);
+    XP.commandTrigger(enc->getCommand(eDown));
   }
-}
-
-void handleDevice(Encoder *enc, int cmdUp, int cmdDown, int cmdPress)
-{
-  handleDevice(enc, cmdUp, cmdDown);
-  if (enc->pressed())
-  {
-    XP.commandStart(cmdPress);
-  }
-  if (enc->released())
-  {
-    XP.commandEnd(cmdPress);
-  }
-}
-
-void handleDevice(Encoder *enc)
-{
-  enc->handle();
-  if (enc->up())
-  {
-    XP.commandTrigger(enc->getCmdUp());
-  }
-  if (enc->down())
-  {
-    XP.commandTrigger(enc->getCmdDown());
-  }
-  int cmdPush = enc->getCmdPush();
+  int cmdPush = enc->getCommand(ePush);
   if (cmdPush >= 0)
   {
     if (enc->pressed())
@@ -424,92 +371,62 @@ void loop()
   Mux.handle();
   leds.handle();
 
-  // handle all input devices directly connected to commands
-  // handleDevice(&encNavInner, cmdNavInnerUp, cmdNavInnerDown, cmdNavToggle);
-  // handleDevice(&encNavOuter, cmdNavOuterUp, cmdNavOuterDown);
-  // handleDevice(&encComInner, cmdComInnerUp, cmdComInnerDown, cmdComToggle);
-  // handleDevice(&encComOuter, cmdComOuterUp, cmdComOuterDown);
-
-  // fully implicit (method could be moved to Encoder class)
-  handleDevice(&encNavInner);
-  handleDevice(&encNavOuter);
-  handleDevice(&encComInner);
-  handleDevice(&encComOuter);
-  
-  // fully explicit
-  handleDevice(&encCourse, cmdCourseUp, cmdCourseDown, cmdCourseSync);
-  handleDevice(&encBaro, cmdBaroUp, cmdBaroDown);
-  handleDevice(&encAltInner, cmdAltInnerUp, cmdAltInnerDown, cmdAltSync);
-  handleDevice(&encAltOuter, cmdAltOuterUp, cmdAltOuterDown);
-  handleDevice(&encFMSInner, cmdFMSInnerUp, cmdFMSInnerDown, cmdFMSCursor);
-  handleDevice(&encFMSOuter, cmdFMSOuterUp, cmdFMSOuterDown);
-  handleDevice(&btnDirect, cmdDirect);
-  handleDevice(&btnFPL, cmdFPL);
-  handleDevice(&btnCLR, cmdCLR);
-  handleDevice(&btnMENU, cmdMENU);
-  handleDevice(&btnPROC, cmdPROC);
-  handleDevice(&btnENT, cmdENT);
-  handleDevice(&btnAP, cmdAP);
-  handleDevice(&btnFD, cmdFD);
-  handleDevice(&btnNAV, cmdNAV);
-  handleDevice(&btnALT, cmdALT);
-  handleDevice(&btnVS, cmdVS);
-  handleDevice(&btnFLC, cmdFLC);
-  handleDevice(&btnYD, cmdYD);
-  handleDevice(&btnHDG, cmdHDG);
-  handleDevice(&btnAPR, cmdAPR);
-  handleDevice(&btnVNAV, cmdVNAV);
-  handleDevice(&btnUP, cmdUP);
-  handleDevice(&btnDN, cmdDN);
-  handleDevice(&encNavVol, cmdNavVolUp, cmdNavVolDown, cmdNavVol);
-  handleDevice(&btnNavFF, cmdNavFF);
-  handleDevice(&btnSoft1, cmdSoft1);
-  handleDevice(&btnSoft2, cmdSoft2);
-  handleDevice(&btnSoft3, cmdSoft3);
-  handleDevice(&btnSoft4, cmdSoft4);
-  handleDevice(&btnSoft5, cmdSoft5);
-  handleDevice(&btnSoft6, cmdSoft6);
-  handleDevice(&btnSoft7, cmdSoft7);
-  handleDevice(&btnSoft8, cmdSoft8);
-  handleDevice(&btnSoft9, cmdSoft9);
-  handleDevice(&btnSoft10, cmdSoft10);
-  handleDevice(&btnSoft11, cmdSoft11);
-  handleDevice(&btnSoft12, cmdSoft12);
-  handleDevice(&encComVol, cmdComVolUp, cmdComVolDown, cmdComVol);
-  handleDevice(&btnComFF, cmdComFF);
-  handleDevice(&encRange, cmdRangeUp, cmdRangeDown);
+  handleCommand(&encNavInner);
+  handleCommand(&encNavOuter);
+  handleCommand(&encComInner);
+  handleCommand(&encComOuter);
+  handleCommand(&encCourse);
+  handleCommand(&encBaro);
+  handleCommand(&encAltInner);
+  handleCommand(&encAltOuter);
+  handleCommand(&encFMSInner);
+  handleCommand(&encFMSOuter);
+  handleCommand(&btnDirect);
+  handleCommand(&btnFPL);
+  handleCommand(&btnCLR);
+  handleCommand(&btnMENU);
+  handleCommand(&btnPROC);
+  handleCommand(&btnENT);
+  handleCommand(&btnAP);
+  handleCommand(&btnFD);
+  handleCommand(&btnNAV);
+  handleCommand(&btnALT);
+  handleCommand(&btnVS);
+  handleCommand(&btnFLC);
+  handleCommand(&btnYD);
+  handleCommand(&btnHDG);
+  handleCommand(&btnAPR);
+  handleCommand(&btnVNAV);
+  handleCommand(&btnUP);
+  handleCommand(&btnDN);
+  handleCommand(&encNavVol);
+  handleCommand(&btnNavFF);
+  handleCommand(&btnSoft1);
+  handleCommand(&btnSoft2);
+  handleCommand(&btnSoft3);
+  handleCommand(&btnSoft4);
+  handleCommand(&btnSoft5);
+  handleCommand(&btnSoft6);
+  handleCommand(&btnSoft7);
+  handleCommand(&btnSoft8);
+  handleCommand(&btnSoft9);
+  handleCommand(&btnSoft10);
+  handleCommand(&btnSoft11);
+  handleCommand(&btnSoft12);
+  handleCommand(&encComVol);
+  handleCommand(&btnComFF);
+  handleCommand(&encRange);
   // handle pan stick manually due to logical operations for inputs
-  btnPanPush.handle(Mux.getBit(4, 0) && !Mux.getBit(4, 1) &&!Mux.getBit(4, 2) &&!Mux.getBit(4, 3) &&!Mux.getBit(4, 4));
-  if (btnPanPush.pressed())
-  {
-    XP.commandTrigger(cmdPanPush);
-  }
-  btnPanUp.handle(Mux.getBit(4, 0) && Mux.getBit(4, 1));
-  if (btnPanUp.pressed())
-  {
-    XP.commandTrigger(cmdPanUp);
-  }
-  btnPanLeft.handle(Mux.getBit(4, 0) && Mux.getBit(4, 2));
-  if (btnPanLeft.pressed())
-  {
-    XP.commandTrigger(cmdPanLeft);
-  }
-  btnPanDown.handle(Mux.getBit(4, 0) && Mux.getBit(4, 3));
-  if (btnPanDown.pressed())
-  {
-    XP.commandTrigger(cmdPanDown);
-  }
-  btnPanRight.handle(Mux.getBit(4, 0) && Mux.getBit(4, 4));
-  if (btnPanRight.pressed())
-  {
-    XP.commandTrigger(cmdPanRight);
-  }
+  handleCommand(&btnPanPush, Mux.getBit(4, 0) &&
+                                 !Mux.getBit(4, 1) && !Mux.getBit(4, 2) && !Mux.getBit(4, 3) && !Mux.getBit(4, 4));
+  handleCommand(&btnPanUp, Mux.getBit(4, 0) && Mux.getBit(4, 1));
+  handleCommand(&btnPanLeft, Mux.getBit(4, 0) && Mux.getBit(4, 2));
+  handleCommand(&btnPanDown, Mux.getBit(4, 0) && Mux.getBit(4, 3));
+  handleCommand(&btnPanRight, Mux.getBit(4, 0) && Mux.getBit(4, 4));
 
-  handleDevice(&encRudderTrim);
-  
-  // partly implicit
-  handleDevice(&btnGearTest, btnGearTest.getCmd());
-  
+  handleCommand(&encRudderTrim);
+  handleCommand(&btnGearTest);
+
   strobe_lights_on = swLightStrobe.value();
   navigation_lights_on = swLightPosition.value();
   taxi_light_on = swLightTaxi.value();
@@ -562,14 +479,19 @@ void loop()
   leds.set(LED_GEAR_RIGHT, (gear_ratio[2] > 0.99) ? ledOn : ledOff);
   leds.set(LED_GEAR_UNSAFE, gear_unsafe ? ledOn : ledOff);
 
-  // static int count = 0;
-  // if (tmrMain.isTick())
-  // {
-  //   Serial.println(count);
-  //   count = 0;
-  // }
-  // else
-  // {
-  //   count++;
-  // }
+#if DEBUG
+  static int count = 0;
+  if (tmrMain.isTick())
+  {
+    Serial.print("Memory: ");
+    Serial.print(freeMemory());
+    Serial.print(" Cycle count: ");
+    Serial.println(count);
+    count = 0;
+  }
+  else
+  {
+    count++;
+  }
+#endif
 }

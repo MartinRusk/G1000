@@ -13,8 +13,8 @@ public:
   bool pressed();
   bool released();
   bool engaged();
-  void setCmd(int cmdPush);
-  int getCmd();
+  void setCommand(int cmdPush);
+  int getCommand();
 protected:
   uint8_t _mux;
   uint8_t _pin;

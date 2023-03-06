@@ -30,7 +30,7 @@ Button::Button(uint8_t pin) : Button(255, pin)
 
 void Button::handle()
 {
-  handle((_mux == 255) ? !digitalRead(_pin) : Mux.getBit(_mux, _pin));
+  handle(Mux.getBit(_mux, _pin));
 }
 
 void Button::handle(bool input)
@@ -77,12 +77,12 @@ bool Button::engaged()
   return _state > 0;
 }
 
-void Button::setCmd(int cmdPush)
+void Button::setCommand(int cmdPush)
 {
   _cmdPush = cmdPush;
 }
 
-int Button::getCmd()
+int Button::getCommand()
 {
   return _cmdPush;
 }
@@ -99,7 +99,7 @@ RepeatButton::RepeatButton(uint8_t pin, uint32_t delay) : RepeatButton(255, pin,
 
 void RepeatButton::handle()
 {
-  handle((_mux == 255) ? !digitalRead(_pin) : Mux.getBit(_mux, _pin));
+  handle(Mux.getBit(_mux, _pin));
 }
 
 void RepeatButton::handle(bool input)

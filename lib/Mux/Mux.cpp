@@ -38,9 +38,14 @@ bool Mux_::addMux(uint8_t pin)
 }
 
 // Gets specific pin from mux, number according to initialization order 
-bool Mux_::getBit(uint8_t mux, uint8_t muxpin)
+// mux = 255 redirects to digital inputs
+bool Mux_::getBit(uint8_t mux, uint8_t pin)
 {
-  return bitRead(_data[mux], muxpin);
+  if (mux == 255)
+  {
+    return !digitalRead(pin);
+  } 
+  return bitRead(_data[mux], pin);
 }
 
 // read all inputs together -> base for board specific optimization by using byte read

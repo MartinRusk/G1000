@@ -43,9 +43,7 @@ Encoder::Encoder(uint8_t pin1, uint8_t pin2, uint8_t pin3, uint8_t pulses) : Enc
 void Encoder::handle()
 {
   // collect new state
-  bool bit1 = (_mux == 255) ? !digitalRead(_pin1) : Mux.getBit(_mux, _pin1);
-  bool bit2 = (_mux == 255) ? !digitalRead(_pin2) : Mux.getBit(_mux, _pin2);
-  _state = ((_state & 0x03) << 2) | (bit2 << 1) | (bit1);
+  _state = ((_state & 0x03) << 2) | (Mux.getBit(_mux, _pin2) << 1) | (Mux.getBit(_mux, _pin1));
   // evaluate state change
   switch (_state)
   {
@@ -76,7 +74,7 @@ void Encoder::handle()
   // optional button functionality
   if (_pin3 != 255)
   {
-    if ((_mux == 255) ? !digitalRead(_pin3) : Mux.getBit(_mux, _pin3))
+    if (Mux.getBit(_mux, _pin3))
     {
       if (_debounce == 0)
       {
@@ -149,32 +147,33 @@ bool Encoder::engaged()
   return _state > 0;
 }
 
-void Encoder::setCmdUp(int cmdUp)
+void Encoder::setCommand(int cmdUp, int cmdDown, int cmdPush)
 {
   _cmdUp = cmdUp;
-}
-
-int Encoder::getCmdUp()
-{
-  return _cmdUp;
-}
-
-void Encoder::setCmdDown(int cmdDown)
-{
   _cmdDown = cmdDown;
-}
-
-int Encoder::getCmdDown()
-{
-  return _cmdDown;
-}
-
-void Encoder::setCmdPush(int cmdPush)
-{
   _cmdPush = cmdPush;
 }
 
-int Encoder::getCmdPush()
+void Encoder::setCommand(int cmdUp, int cmdDown)
 {
-  return _cmdPush;
+  setCommand(cmdUp, cmdDown, -1);
+}
+
+int Encoder::getCommand(cmd_t cmd)
+{
+  switch (cmd)
+  {
+  case eUp:
+    return _cmdUp;
+    break;
+  case eDown:
+    return _cmdDown;
+    break;
+  case ePush:
+    return _cmdPush;
+    break;
+  default:
+    return -1;
+    break;
+  }
 }

@@ -2,6 +2,13 @@
 #define Encoder_h
 #include <Mux.h>
 
+enum cmd_t
+{
+  eUp,
+  eDown,
+  ePush
+};
+
 class Encoder
 {
 public:
@@ -14,12 +21,9 @@ public:
   bool pressed();
   bool released();
   bool engaged();
-  void setCmdUp(int cmdUp);
-  int getCmdUp();
-  void setCmdDown(int cmdDown);
-  int getCmdDown();
-  void setCmdPush(int cmdPush);
-  int getCmdPush();
+  void setCommand(int cmdUp, int cmdDown, int cmdPush);
+  void setCommand(int cmdUp, int cmdDown);
+  int getCommand(cmd_t cmd);
 private:
   uint8_t _mux;
   uint8_t _pin1, _pin2, _pin3;

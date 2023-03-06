@@ -26,7 +26,7 @@ bool Switch::value()
   }
   else 
   {
-    bool input = ((_mux == 255) ? !digitalRead(_pin) : Mux.getBit(_mux, _pin));
+    bool input = (Mux.getBit(_mux, _pin));
     if (input != _state)
     {
       _debounce = DEBOUNCE_DELAY;
@@ -62,11 +62,11 @@ int Switch2::value()
   else
   {
     int input;
-    if ((_mux == 255) ? !digitalRead(_pin1) : Mux.getBit(_mux, _pin1))
+    if (Mux.getBit(_mux, _pin1))
     {
       input = 0;
     }
-    else if ((_mux == 255) ? !digitalRead(_pin2) : Mux.getBit(_mux, _pin2))
+    else if (Mux.getBit(_mux, _pin2))
     {
       input = 2;
     }
