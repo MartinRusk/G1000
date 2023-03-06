@@ -2,31 +2,42 @@
 #define Switch_h
 #include <Mux.h>
 
+enum eSwitch_t
+{
+  eSwitchOff,
+  eSwitchOn,
+  eSwitchOn2
+};
+
 class Switch
 {
 public:
   Switch(uint8_t mux, uint8_t pin);
   Switch(uint8_t pin);
-  bool value();
+  bool handle();
+  eSwitch_t state();
+  void setCommand(int cmdOff, int cmdOn);
+  int getCommand();
 protected:
   uint8_t _mux;
   uint8_t _pin;
   uint8_t _state;
   uint8_t _debounce;
+  int _cmdOff;
+  int _cmdOn;
 };
 
-class Switch2
+class Switch2 : public Switch
 {
 public:
   Switch2(uint8_t mux, uint8_t pin1, uint8_t pin2);
   Switch2(uint8_t pin1, uint8_t pin2);
-  int value();
+  bool handle();
+  void setCommand(int cmdOff, int cmdOn, int cmdOn2);
+  int getCommand();
 protected:
-  uint8_t _mux;
-  uint8_t _pin1;
   uint8_t _pin2;
-  uint8_t _state;
-  uint8_t _debounce;
+  int _cmdOn2;
 };
 
 #endif

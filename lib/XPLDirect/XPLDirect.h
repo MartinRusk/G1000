@@ -9,8 +9,8 @@
 #ifndef XPLDirect_h
 #define XPLDirect_h
 
-#define XPLDIRECT_MAXDATAREFS_ARDUINO 20 // This can be changed to suit your needs and capabilities of your board.
-#define XPLDIRECT_MAXCOMMANDS_ARDUINO 80  // Same here.
+#define XPLDIRECT_MAXDATAREFS_ARDUINO 10 // This can be changed to suit your needs and capabilities of your board.
+#define XPLDIRECT_MAXCOMMANDS_ARDUINO 100  // Same here.
 #define XPLDIRECT_RX_TIMEOUT 500 // after detecting a frame header, how long will we wait to receive the rest of the frame.  (default 500)
 
 #define XPLMAX_PACKETSIZE 80 // Probably leave this alone. If you need a few extra bytes of RAM it could be reduced, but it needs to
