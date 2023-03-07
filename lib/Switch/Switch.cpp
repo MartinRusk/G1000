@@ -104,6 +104,7 @@ bool Switch2::handle()
     if (input != _state)
     {
       _debounce = DEBOUNCE_DELAY;
+      _lastState = _state;
       _state = input;
       return true;
     }
@@ -111,28 +112,31 @@ bool Switch2::handle()
   return false;
 }
 
-void Switch2::setCommand(int cmdOff, int cmdOn, int cmdOn2)
+void Switch2::setCommand(int cmdOn, int cmdOff, int cmdOn2, int cmdOff2)
 {
-  _cmdOff = cmdOff;
   _cmdOn = cmdOn;
+  _cmdOff = cmdOff;
   _cmdOn2 = cmdOn2;
+  _cmdOff2 = cmdOff2;
 }
 
 int Switch2::getCommand()
 {
-  switch (_state)
+  if (_state == eSwitchOn)
   {
-  case eSwitchOff:
-    return _cmdOff;
-    break;
-  case eSwitchOn:
     return _cmdOn;
-    break;
-  case eSwitchOn2:
-    return _cmdOn2;
-    break;
-  default:
-    return -1;
-    break;
   }
+  if (_state == eSwitchOff && _lastState == eSwitchOn)
+  {
+    return _cmdOff;
+  }
+  if (_state == eSwitchOff && _lastState == eSwitchOn2)
+  {
+    return _cmdOff2;
+  }
+  if (_state == eSwitchOn2)
+  {
+    return _cmdOn2;
+  }
+  return -1;
 }
