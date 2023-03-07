@@ -1,11 +1,11 @@
 #ifndef SoftTimer_h
 #define SoftTimer_h
 
-class SoftTimer
+class Timer
 {
   public: 
-    SoftTimer(float cycle); // ms
-    SoftTimer();
+    Timer(float cycle); // ms
+    Timer();
     bool isTick();
     float getTime(); // ms
     void setCycle(float cycle); // ms

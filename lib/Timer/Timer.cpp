@@ -1,17 +1,17 @@
 #include <Arduino.h>
-#include "SoftTimer.h"
+#include "Timer.h"
 
-SoftTimer::SoftTimer(float cycle)
+Timer::Timer(float cycle)
 {
   setCycle(cycle);
   _lastUpdateTime = micros();
 }
 
-SoftTimer::SoftTimer() : SoftTimer(0)
+Timer::Timer() : Timer(0)
 {
 }
 
-bool SoftTimer::isTick()
+bool Timer::isTick()
 {
   unsigned long now = micros();
   if (now > _lastUpdateTime + _cycleTime)
@@ -22,7 +22,7 @@ bool SoftTimer::isTick()
   return false;
 }
 
-float SoftTimer::getTime()
+float Timer::getTime()
 {
   unsigned long now = micros();
   unsigned long cycle = now - _lastUpdateTime;
@@ -30,7 +30,7 @@ float SoftTimer::getTime()
   return (float)cycle / 1000.0;
 }
 
-void SoftTimer::setCycle(float cycle)
+void Timer::setCycle(float cycle)
 {  
   _cycleTime = (unsigned long)(cycle * 1000.0);
 }

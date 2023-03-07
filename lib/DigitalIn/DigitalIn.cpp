@@ -1,9 +1,7 @@
 #include <Arduino.h>
 #include "DigitalIn.h"
 
-#define IS_MUX_PIN(pin) (pin < 0xf0)
-#define IS_MCP_PIN(pin) (pin >= 0xf0 && pin < 0xf8)
-#define PIN_TO_MCP(pin) (pin - 0xc0)
+#define MCP_PIN 250
 
 DigitalIn_::DigitalIn_()
 {
@@ -14,7 +12,7 @@ DigitalIn_::DigitalIn_()
   }
 }
 
-void DigitalIn_::begin(uint8_t s0, uint8_t s1, uint8_t s2, uint8_t s3)
+void DigitalIn_::setMux(uint8_t s0, uint8_t s1, uint8_t s2, uint8_t s3)
 {
   _s0 = s0;
   _s1 = s1;
@@ -33,37 +31,32 @@ bool DigitalIn_::addMux(uint8_t pin)
   {
     return false;
   }
-  // 74HC4067?
-  if (pin < 0xf0)
-  { 
-    _pin[_numPins++] = pin;
-    pinMode(pin, INPUT);
-    return true;
-  }
+  _pin[_numPins++] = pin;
+  pinMode(pin, INPUT);
+  return true;
+}
+
 #if MCP_MAX_NUMBER > 0
+bool DigitalIn_::addMCP(uint8_t adress)
+{
   if (_numMCP >= MCP_MAX_NUMBER)
   {
     return false;
   }
-  // MCP23017 on i2c?
-  // _mcp[_numMCP] = new Adafruit_MCP23X17;
-  if (!_mcp[_numMCP].begin_I2C(PIN_TO_MCP(pin), &Wire))
+  if (!_mcp[_numMCP].begin_I2C(adress, &Wire))
   {
-    // delete &_mcp[_numMCP];
     return false;
   }
   for (int i = 0; i < 16; i++)
   {
-    // TODO: register write
+    // TODO: register write iodir = 0xffff, ipol = 0xffff, gppu = 0xffff
     _mcp[_numMCP].pinMode(i, INPUT_PULLUP);
   }
   _numMCP++;
-  _pin[_numPins++] = pin;
+  _pin[_numPins++] = MCP_PIN;
   return true;
-#else
-  return false;
-#endif
 }
+#endif
 
 // Gets specific pin from mux, number according to initialization order 
 bool DigitalIn_::getBit(uint8_t mux, uint8_t pin)
@@ -78,17 +71,23 @@ bool DigitalIn_::getBit(uint8_t mux, uint8_t pin)
 // read all inputs together -> base for board specific optimization by using byte read
 void DigitalIn_::handle()
 {
-  for (uint8_t muxpin = 0; muxpin < 16; muxpin++)
+  // only if Mux Pins present
+#if MCP_MAX_NUMBER > 0  
+  if (_numPins > _numMCP)
+#endif
   {
-    digitalWrite(_s0, bitRead(muxpin, 0));
-    digitalWrite(_s1, bitRead(muxpin, 1));
-    digitalWrite(_s2, bitRead(muxpin, 2));
-    digitalWrite(_s3, bitRead(muxpin, 3));
-    for (uint8_t mux = 0; mux < _numPins; mux++)
-    { 
-      if (_pin[mux] < 0xf0)
+    for (uint8_t muxpin = 0; muxpin < 16; muxpin++)
+    {
+      digitalWrite(_s0, bitRead(muxpin, 0));
+      digitalWrite(_s1, bitRead(muxpin, 1));
+      digitalWrite(_s2, bitRead(muxpin, 2));
+      digitalWrite(_s3, bitRead(muxpin, 3));
+      for (uint8_t mux = 0; mux < _numPins; mux++)
       {
-        bitWrite(_data[mux], muxpin, !digitalRead(_pin[mux]));
+        if (_pin[mux] != MCP_PIN)
+        {
+          bitWrite(_data[mux], muxpin, !digitalRead(_pin[mux]));
+        }
       }
     }
   }
@@ -96,9 +95,9 @@ void DigitalIn_::handle()
   int mcp = 0;
   for (uint8_t mux = 0; mux < _numPins; mux++)
   {
-    if (_pin[mux] >= 0xf0)
+    if (_pin[mux] == MCP_PIN)
     {
-      _data[mux] = _mcp[mcp++].readGPIOAB();
+      _data[mux] = ~_mcp[mcp++].readGPIOAB();
     }
   }
 #endif

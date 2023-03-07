@@ -6,10 +6,10 @@
 #include <Switch.h>
 #include <LedShift.h>
 #include <AnalogIn.h>
-#include <SoftTimer.h>
+#include <Timer.h>
 #include <XPLDirect.h>
 
-// #define DEBUG 1
+#define DEBUG 1
 
 // Interface
 XPLDirect XP(&Serial);
@@ -100,8 +100,8 @@ LedShift leds(16, 14, 15);
 #define LED_GEAR_UNSAFE 6
 
 // Timer for Main loop
-SoftTimer tmrMain(1000.0);
-SoftTimer tmrSync(1000.0);
+Timer tmrMain(1000.0);
+Timer tmrSync(1000.0);
 
 // DataRefs MUX 5
 float gear_ratio[3];
@@ -122,7 +122,7 @@ void setup()
   XP.begin("G1000 MFD");
 
   // Setup Multiplexers
-  DigitalIn.begin(1, 0, 2, 3);
+  DigitalIn.setMux(1, 0, 2, 3);
   DigitalIn.addMux(4); // MUX 0
   DigitalIn.addMux(5); // MUX 1
   DigitalIn.addMux(6); // MUX 2
