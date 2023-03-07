@@ -3,11 +3,17 @@
 
 #define AD_RES 10
 
+enum Analog_t
+{
+  eUnipolar,
+  eBipolar
+};
+
 class AnalogIn
 {
 public:
-  AnalogIn(uint8_t pin, bool bipolar, float timeConst);
-  AnalogIn(uint8_t pin, bool bipolar);
+  AnalogIn(uint8_t pin, Analog_t type, float timeConst);
+  AnalogIn(uint8_t pin, Analog_t type);
   float value();
   int raw();
   void calibrate();
@@ -18,7 +24,6 @@ private:
   float _scalePos;
   float _scaleNeg;
   int _offset;
-  bool _bipolar;
   uint8_t _pin;
 };
 

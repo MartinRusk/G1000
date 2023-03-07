@@ -86,8 +86,8 @@ Switch swGear(5, 11);
 Switch2 swFlaps(5, 12, 13);
 
 // Potentiometers
-AnalogIn potInstr(0, false, 10);
-AnalogIn potFlood(1, false, 10);
+AnalogIn potInstr(0, eUnipolar, 10);
+AnalogIn potFlood(1, eUnipolar, 10);
 
 // LEDs
 LedShift leds(16, 14, 15);

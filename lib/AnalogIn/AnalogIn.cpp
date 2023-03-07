@@ -4,14 +4,13 @@
 #define FULL_SCALE ((1 << AD_RES) - 1)
 #define HALF_SCALE (1 << (AD_RES - 1))
 
-AnalogIn::AnalogIn(uint8_t pin, bool bipolar)
+AnalogIn::AnalogIn(uint8_t pin, Analog_t type)
 {
   _pin = pin;
-  _bipolar = bipolar;
   _filterConst = 1.0;
   _scale = 1.0;
   pinMode(_pin, INPUT);
-  if (_bipolar)
+  if (type == eBipolar)
   {
     _offset = HALF_SCALE;
     _scalePos = _scale / HALF_SCALE;
@@ -25,7 +24,7 @@ AnalogIn::AnalogIn(uint8_t pin, bool bipolar)
   }
 }
 
-AnalogIn::AnalogIn(uint8_t pin, bool bipolar, float timeConst) : AnalogIn(pin, bipolar)
+AnalogIn::AnalogIn(uint8_t pin, Analog_t type, float timeConst) : AnalogIn(pin, type)
 {
   _filterConst = 1.0 / timeConst;
 }
@@ -50,6 +49,6 @@ void AnalogIn::calibrate()
     sum += analogRead(_pin);
   }
   _offset = (int)(sum / 64);
-  _scalePos = _scale / (float)(FULL_SCALE - _offset);
-  _scaleNeg = _scale / (float)(_offset);
+  _scalePos = (_offset < FULL_SCALE) ? _scale / (float)(FULL_SCALE - _offset) : 1.0;
+  _scaleNeg = (_offset > 0)? _scale / (float)(_offset) : 1.0;
 }
