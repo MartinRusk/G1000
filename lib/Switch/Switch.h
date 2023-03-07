@@ -1,6 +1,6 @@
 #ifndef Switch_h
 #define Switch_h
-#include <Mux.h>
+#include <DigitalIn.h>
 
 enum SwState_t
 {

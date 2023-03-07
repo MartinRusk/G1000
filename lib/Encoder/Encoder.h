@@ -1,6 +1,6 @@
 #ifndef Encoder_h
 #define Encoder_h
-#include <Mux.h>
+#include <DigitalIn.h>
 
 enum EncCmd_t
 {

@@ -1,13 +1,16 @@
 #ifndef Mux_h
 #define Mux_h
+#include <Adafruit_MCP23X17.h>
 
-#define MUX_MAX_NUMBER 12
 #define NOT_USED 255
+#define MUX_MAX_NUMBER 12
+#define MCP_MAX_NUMBER 0
+#define MCP_TO_PIN(i2c_adress) (i2c_adress + 0xc0)
 
-class Mux_
+class DigitalIn_
 {
 public:
-  Mux_();
+  DigitalIn_();
   void begin(uint8_t s0, uint8_t s1, uint8_t s2, uint8_t s3);
   bool addMux(uint8_t pin);
   bool getBit(uint8_t mux, uint8_t muxpin);
@@ -17,8 +20,13 @@ private:
   uint8_t _numPins;
   uint8_t _pin[MUX_MAX_NUMBER];
   int16_t _data[MUX_MAX_NUMBER];
+  // add MCP23017 members
+#if MCP_MAX_NUMBER > 0
+  uint8_t _numMCP;
+  Adafruit_MCP23X17 _mcp[MCP_MAX_NUMBER];
+#endif
 };
 
-extern Mux_ Mux;
+extern DigitalIn_ DigitalIn;
 
 #endif

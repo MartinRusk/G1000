@@ -30,7 +30,7 @@ Button::Button(uint8_t pin) : Button(NOT_USED, pin)
 
 void Button::handle()
 {
-  handle(Mux.getBit(_mux, _pin));
+  handle(DigitalIn.getBit(_mux, _pin));
 }
 
 void Button::handle(bool input)
@@ -99,7 +99,7 @@ RepeatButton::RepeatButton(uint8_t pin, uint32_t delay) : RepeatButton(NOT_USED,
 
 void RepeatButton::handle()
 {
-  handle(Mux.getBit(_mux, _pin));
+  handle(DigitalIn.getBit(_mux, _pin));
 }
 
 void RepeatButton::handle(bool input)

@@ -44,7 +44,7 @@ Encoder::Encoder(uint8_t pin1, uint8_t pin2, uint8_t pin3, EncPulse_t pulses) : 
 void Encoder::handle()
 {
   // collect new state
-  _state = ((_state & 0x03) << 2) | (Mux.getBit(_mux, _pin2) << 1) | (Mux.getBit(_mux, _pin1));
+  _state = ((_state & 0x03) << 2) | (DigitalIn.getBit(_mux, _pin2) << 1) | (DigitalIn.getBit(_mux, _pin1));
   // evaluate state change
   switch (_state)
   {
@@ -75,7 +75,7 @@ void Encoder::handle()
   // optional button functionality
   if (_pin3 != NOT_USED)
   {
-    if (Mux.getBit(_mux, _pin3))
+    if (DigitalIn.getBit(_mux, _pin3))
     {
       if (_debounce == 0)
       {

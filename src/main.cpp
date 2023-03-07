@@ -1,6 +1,6 @@
 #include <Arduino.h>
 #include <MemoryFree.h>
-#include <Mux.h>
+#include <DigitalIn.h>
 #include <Button.h>
 #include <Encoder.h>
 #include <Switch.h>
@@ -122,13 +122,13 @@ void setup()
   XP.begin("G1000 MFD");
 
   // Setup Multiplexers
-  Mux.begin(1, 0, 2, 3);
-  Mux.addMux(4); // MUX 0
-  Mux.addMux(5); // MUX 1
-  Mux.addMux(6); // MUX 2
-  Mux.addMux(7); // MUX 3
-  Mux.addMux(8); // MUX 4
-  Mux.addMux(9); // MUX 5
+  DigitalIn.begin(1, 0, 2, 3);
+  DigitalIn.addMux(4); // MUX 0
+  DigitalIn.addMux(5); // MUX 1
+  DigitalIn.addMux(6); // MUX 2
+  DigitalIn.addMux(7); // MUX 3
+  DigitalIn.addMux(8); // MUX 4
+  DigitalIn.addMux(9); // MUX 5
 
   // init led sequence
   leds.set_all(ledOff);
@@ -375,7 +375,7 @@ void handleCommand(Switch *sw)
 void loop()
 {
   XP.xloop();
-  Mux.handle();
+  DigitalIn.handle();
   leds.handle();
 
   handleCommand(&encNavInner);
@@ -424,13 +424,13 @@ void loop()
   handleCommand(&btnComFF);
   handleCommand(&encRange);
   // handle pan stick manually due to logical operations for inputs
-  handleCommand(&btnPanPush, Mux.getBit(4, 0) &&
-                                 !Mux.getBit(4, 1) && !Mux.getBit(4, 2) &&
-                                 !Mux.getBit(4, 3) && !Mux.getBit(4, 4));
-  handleCommand(&btnPanUp, Mux.getBit(4, 0) && Mux.getBit(4, 1));
-  handleCommand(&btnPanLeft, Mux.getBit(4, 0) && Mux.getBit(4, 2));
-  handleCommand(&btnPanDown, Mux.getBit(4, 0) && Mux.getBit(4, 3));
-  handleCommand(&btnPanRight, Mux.getBit(4, 0) && Mux.getBit(4, 4));
+  handleCommand(&btnPanPush, DigitalIn.getBit(4, 0) &&
+                                 !DigitalIn.getBit(4, 1) && !DigitalIn.getBit(4, 2) &&
+                                 !DigitalIn.getBit(4, 3) && !DigitalIn.getBit(4, 4));
+  handleCommand(&btnPanUp, DigitalIn.getBit(4, 0) && DigitalIn.getBit(4, 1));
+  handleCommand(&btnPanLeft, DigitalIn.getBit(4, 0) && DigitalIn.getBit(4, 2));
+  handleCommand(&btnPanDown, DigitalIn.getBit(4, 0) && DigitalIn.getBit(4, 3));
+  handleCommand(&btnPanRight, DigitalIn.getBit(4, 0) && DigitalIn.getBit(4, 4));
 
   handleCommand(&encRudderTrim);
   handleCommand(&btnGearTest);

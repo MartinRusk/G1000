@@ -1,6 +1,6 @@
 #ifndef Button_h
 #define Button_h
-#include <Mux.h>
+#include <DigitalIn.h>
 
 // simple Button
 class Button

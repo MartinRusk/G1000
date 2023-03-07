@@ -29,7 +29,7 @@ bool Switch::handle()
   else 
   {
     SwState_t input = eSwitchOff;
-    if (Mux.getBit(_mux, _pin))
+    if (DigitalIn.getBit(_mux, _pin))
     {
       input = eSwitchOn;
     }
@@ -93,11 +93,11 @@ bool Switch2::handle()
   else
   {
     SwState_t input = eSwitchOff;
-    if (Mux.getBit(_mux, _pin))
+    if (DigitalIn.getBit(_mux, _pin))
     {
       input = eSwitchOn;
     }
-    else if (Mux.getBit(_mux, _pin2))
+    else if (DigitalIn.getBit(_mux, _pin2))
     {
       input = eSwitchOn2;
     }
