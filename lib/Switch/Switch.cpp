@@ -10,13 +10,13 @@ Switch::Switch(uint8_t mux, uint8_t pin)
   _state = eSwitchOff;
   _cmdOff = -1;
   _cmdOn = -1;
-  if (_mux == 255)
+  if (_mux == NOT_USED)
   {
     pinMode(_pin, INPUT_PULLUP);
   }
 }
 
-Switch::Switch(uint8_t pin) : Switch (255, pin)
+Switch::Switch(uint8_t pin) : Switch (NOT_USED, pin)
 {
 }
 
@@ -28,7 +28,7 @@ bool Switch::handle()
   }
   else 
   {
-    eSwitch_t input = eSwitchOff;
+    SwState_t input = eSwitchOff;
     if (Mux.getBit(_mux, _pin))
     {
       input = eSwitchOn;
@@ -43,15 +43,15 @@ bool Switch::handle()
   return false;
 }
 
-eSwitch_t Switch::state()
+SwState_t Switch::state()
 {
   return _state;
 }
 
-void Switch::setCommand(int cmdOff, int cmdOn)
+void Switch::setCommand(int cmdOn, int cmdOff)
 {
-  _cmdOff = cmdOff;
   _cmdOn = cmdOn;
+  _cmdOff = cmdOff;
 }
 
 int Switch::getCommand()
@@ -74,13 +74,13 @@ Switch2::Switch2(uint8_t mux, uint8_t pin1, uint8_t pin2) : Switch(mux, pin1)
 {
   _pin2 = pin2;
   _cmdOn2 = -1;
-  if (_mux == 255)
+  if (_mux == NOT_USED)
   {
     pinMode(_pin2, INPUT_PULLUP);
   }
 }
 
-Switch2::Switch2(uint8_t pin1, uint8_t pin2) : Switch2 (255, pin1, pin2)
+Switch2::Switch2(uint8_t pin1, uint8_t pin2) : Switch2 (NOT_USED, pin1, pin2)
 {
 }
 
@@ -92,7 +92,7 @@ bool Switch2::handle()
   }
   else
   {
-    eSwitch_t input = eSwitchOff;
+    SwState_t input = eSwitchOff;
     if (Mux.getBit(_mux, _pin))
     {
       input = eSwitchOn;

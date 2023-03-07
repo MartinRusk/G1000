@@ -18,13 +18,13 @@ Button::Button(uint8_t mux, uint8_t pin)
   _state = 0;
   _transition = 0;
   _cmdPush = -1;
-  if (_mux != 255)
+  if (_mux != NOT_USED)
   {
     pinMode(_pin, INPUT_PULLUP);
   }
 }
 
-Button::Button(uint8_t pin) : Button(255, pin)
+Button::Button(uint8_t pin) : Button(NOT_USED, pin)
 {
 }
 
@@ -93,7 +93,7 @@ RepeatButton::RepeatButton(uint8_t mux, uint8_t pin, uint32_t delay) : Button(mu
   _timer = 0;
 }
 
-RepeatButton::RepeatButton(uint8_t pin, uint32_t delay) : RepeatButton(255, pin, delay)
+RepeatButton::RepeatButton(uint8_t pin, uint32_t delay) : RepeatButton(NOT_USED, pin, delay)
 {
 }
 

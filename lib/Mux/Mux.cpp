@@ -6,7 +6,7 @@ Mux_::Mux_()
   _numPins = 0;
   for (uint8_t mux = 0; mux < MUX_MAX_NUMBER; mux++)
   {
-    _pin[mux] = 255;
+    _pin[mux] = NOT_USED;
   }
 }
 
@@ -38,10 +38,9 @@ bool Mux_::addMux(uint8_t pin)
 }
 
 // Gets specific pin from mux, number according to initialization order 
-// mux = 255 redirects to digital inputs
 bool Mux_::getBit(uint8_t mux, uint8_t pin)
 {
-  if (mux == 255)
+  if (mux == NOT_USED)
   {
     return !digitalRead(pin);
   } 

@@ -10,8 +10,8 @@ enum
   eReleased
 };
 
-// Encoder with button functionality
-Encoder::Encoder(uint8_t mux, uint8_t pin1, uint8_t pin2, uint8_t pin3, uint8_t pulses)
+// Encoder with button functionality on MUX
+Encoder::Encoder(uint8_t mux, uint8_t pin1, uint8_t pin2, uint8_t pin3, EncPulse_t pulses)
 {
   _mux = mux;
   _pin1 = pin1;
@@ -24,18 +24,19 @@ Encoder::Encoder(uint8_t mux, uint8_t pin1, uint8_t pin2, uint8_t pin3, uint8_t 
   _cmdUp = -1;
   _cmdDown = -1;
   _cmdPush = -1;
-  if (_mux != 255)
+  if (_mux != NOT_USED)
   {
     pinMode(_pin1, INPUT_PULLUP);
     pinMode(_pin2, INPUT_PULLUP);
-    if (_pin3 != 255)
+    if (_pin3 != NOT_USED)
     {
       pinMode(_pin3, INPUT_PULLUP);
     }
   }
 }
 
-Encoder::Encoder(uint8_t pin1, uint8_t pin2, uint8_t pin3, uint8_t pulses) : Encoder(255, pin1, pin2, pin3, pulses)
+// Encoder with Button funktionality directly on pins
+Encoder::Encoder(uint8_t pin1, uint8_t pin2, uint8_t pin3, EncPulse_t pulses) : Encoder(NOT_USED, pin1, pin2, pin3, pulses)
 {
 }
 
@@ -72,7 +73,7 @@ void Encoder::handle()
   }
 
   // optional button functionality
-  if (_pin3 != 255)
+  if (_pin3 != NOT_USED)
   {
     if (Mux.getBit(_mux, _pin3))
     {
@@ -159,17 +160,17 @@ void Encoder::setCommand(int cmdUp, int cmdDown)
   setCommand(cmdUp, cmdDown, -1);
 }
 
-int Encoder::getCommand(cmd_t cmd)
+int Encoder::getCommand(EncCmd_t cmd)
 {
   switch (cmd)
   {
-  case eUp:
+  case eEncCmdUp:
     return _cmdUp;
     break;
-  case eDown:
+  case eEncCmdDown:
     return _cmdDown;
     break;
-  case ePush:
+  case eEncCmdPush:
     return _cmdPush;
     break;
   default:

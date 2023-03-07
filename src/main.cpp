@@ -15,17 +15,17 @@
 XPLDirect XP(&Serial);
 
 // MUX 0
-Encoder encNavInner(0, 1, 2, 0, 4);
-Encoder encNavOuter(0, 4, 3, 255, 4);
-Encoder encComInner(0, 6, 7, 5, 4);
-Encoder encComOuter(0, 9, 8, 255, 4);
-Encoder encCourse(0, 11, 12, 10, 4);
-Encoder encBaro(0, 14, 13, 255, 4);
+Encoder encNavInner(0, 1, 2, 0, eEnc4Pulse);
+Encoder encNavOuter(0, 4, 3, NOT_USED, eEnc4Pulse);
+Encoder encComInner(0, 6, 7, 5, eEnc4Pulse);
+Encoder encComOuter(0, 9, 8, NOT_USED, eEnc4Pulse);
+Encoder encCourse(0, 11, 12, 10, eEnc4Pulse);
+Encoder encBaro(0, 14, 13, NOT_USED, eEnc4Pulse);
 // MUX 1
-Encoder encAltInner(1, 1, 2, 0, 4);
-Encoder encAltOuter(1, 4, 3, 255, 4);
-Encoder encFMSInner(1, 6, 7, 5, 4);
-Encoder encFMSOuter(1, 9, 8, 255, 4);
+Encoder encAltInner(1, 1, 2, 0, eEnc4Pulse);
+Encoder encAltOuter(1, 4, 3, NOT_USED, eEnc4Pulse);
+Encoder encFMSInner(1, 6, 7, 5, eEnc4Pulse);
+Encoder encFMSOuter(1, 9, 8, NOT_USED, eEnc4Pulse);
 Button btnDirect(1, 10);
 Button btnFPL(1, 11);
 Button btnCLR(1, 12);
@@ -45,7 +45,7 @@ Button btnAPR(2, 8);
 Button btnVNAV(2, 9);
 Button btnUP(2, 10);
 Button btnDN(2, 11);
-Encoder encNavVol(2, 12, 13, 14, 4);
+Encoder encNavVol(2, 12, 13, 14, eEnc4Pulse);
 Button btnNavFF(2, 15);
 // MUX3
 Button btnSoft1(3, 0);
@@ -60,19 +60,19 @@ Button btnSoft9(3, 8);
 Button btnSoft10(3, 9);
 Button btnSoft11(3, 10);
 Button btnSoft12(3, 11);
-Encoder encComVol(3, 12, 13, 14, 4);
+Encoder encComVol(3, 12, 13, 14, eEnc4Pulse);
 Button btnComFF(3, 15);
 // MUX4 Pan/Zoom
-Encoder encRange(4, 6, 5, 0, 2);
+Encoder encRange(4, 6, 5, 0, eEnc2Pulse);
 Button btnPanPush(4, 0);
 RepeatButton btnPanUp(4, 1, 250);
 RepeatButton btnPanLeft(4, 2, 250);
 RepeatButton btnPanDown(4, 3, 250);
 RepeatButton btnPanRight(4, 4, 250);
-Encoder encHeading(4, 12, 13, 14, 4);
+Encoder encHeading(4, 12, 13, 14, eEnc4Pulse);
 
 // MFD specific
-Encoder encRudderTrim(4, 8, 9, 10, 4);
+Encoder encRudderTrim(4, 8, 9, 10, eEnc4Pulse);
 Switch swLightLanding(5, 0);
 Switch swLightTaxi(5, 1);
 Switch swLightPosition(5, 2);
@@ -276,17 +276,17 @@ void setup()
       XP.registerCommand(F("aerobask/gear_test")));
 
   swLightStrobe.setCommand(
-      XP.registerCommand(F("sim/lights/strobe_lights_off")),
-      XP.registerCommand(F("sim/lights/strobe_lights_on")));
+      XP.registerCommand(F("sim/lights/strobe_lights_on")),
+      XP.registerCommand(F("sim/lights/strobe_lights_off")));
   swLightPosition.setCommand(
-      XP.registerCommand(F("sim/lights/nav_lights_off")),
-      XP.registerCommand(F("sim/lights/nav_lights_on")));
+      XP.registerCommand(F("sim/lights/nav_lights_on")),
+      XP.registerCommand(F("sim/lights/nav_lights_off")));
   swLightTaxi.setCommand(
-      XP.registerCommand(F("sim/lights/taxi_lights_off")),
-      XP.registerCommand(F("sim/lights/taxi_lights_on")));
+      XP.registerCommand(F("sim/lights/taxi_lights_on")),
+      XP.registerCommand(F("sim/lights/taxi_lights_off")));
   swLightLanding.setCommand(
-      XP.registerCommand(F("sim/lights/landing_lights_ooff")),
-      XP.registerCommand(F("sim/lights/landing_lights_on")));
+      XP.registerCommand(F("sim/lights/landing_lights_on")),
+      XP.registerCommand(F("sim/lights/landing_lights_off")));
   swFuelAuxLeft.setCommand(
       XP.registerCommand(F("aerobask/auxfuel/pump1_up")),
       XP.registerCommand(F("aerobask/auxfuel/pump1_dn")));
@@ -343,13 +343,13 @@ void handleCommand(Encoder *enc)
   enc->handle();
   if (enc->up())
   {
-    XP.commandTrigger(enc->getCommand(eUp));
+    XP.commandTrigger(enc->getCommand(eEncCmdUp));
   }
   if (enc->down())
   {
-    XP.commandTrigger(enc->getCommand(eDown));
+    XP.commandTrigger(enc->getCommand(eEncCmdDown));
   }
-  int cmdPush = enc->getCommand(ePush);
+  int cmdPush = enc->getCommand(eEncCmdPush);
   if (cmdPush >= 0)
   {
     if (enc->pressed())
@@ -440,6 +440,7 @@ void loop()
   handleCommand(&swLightTaxi);
   handleCommand(&swLightLanding);
 
+  // Sync Switches 
   if (tmrSync.isTick())
   {
     XP.commandTrigger(swLightStrobe.getCommand());
@@ -451,7 +452,7 @@ void loop()
   }
 
   swFlaps.handle();
-  eSwitch_t state = swFlaps.state();
+  SwState_t state = swFlaps.state();
   flap_handle_request_ratio = (state == eSwitchOn) ? 1.0 : (state == eSwitchOn2) ? 0.0 : 0.5;
   swGear.handle();
   gear_handle_down = (swGear.state() == eSwitchOn) ? 0.0 : 1.0;

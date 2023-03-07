@@ -2,7 +2,7 @@
 #define Switch_h
 #include <Mux.h>
 
-enum eSwitch_t
+enum SwState_t
 {
   eSwitchOff,
   eSwitchOn,
@@ -15,14 +15,14 @@ public:
   Switch(uint8_t mux, uint8_t pin);
   Switch(uint8_t pin);
   bool handle();
-  eSwitch_t state();
-  void setCommand(int cmdOff, int cmdOn);
+  SwState_t state();
+  void setCommand(int cmdOn, int cmdOff);
   int getCommand();
 protected:
   uint8_t _mux;
   uint8_t _pin;
   uint8_t _debounce;
-  eSwitch_t _state;
+  SwState_t _state;
   int _cmdOff;
   int _cmdOn;
 };
@@ -33,7 +33,7 @@ public:
   Switch2(uint8_t mux, uint8_t pin1, uint8_t pin2);
   Switch2(uint8_t pin1, uint8_t pin2);
   bool handle();
-  void setCommand(int cmdOff, int cmdOn, int cmdOn2);
+  void setCommand(int cmdOn, int cmdOff, int cmdOn2);
   int getCommand();
 protected:
   uint8_t _pin2;

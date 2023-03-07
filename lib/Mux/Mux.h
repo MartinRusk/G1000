@@ -1,7 +1,8 @@
 #ifndef Mux_h
 #define Mux_h
 
-#define MUX_MAX_NUMBER 6
+#define MUX_MAX_NUMBER 12
+#define NOT_USED 255
 
 class Mux_
 {
