@@ -1,7 +1,7 @@
 /*
   XPLDirect.cpp
   Created by Michael Gerlicher, September 2020.
-  Stripped down to Minimal Version by mrusk, February 2023
+  Modified by mrusk, March 2023
 */
 
 #include <arduino.h>
@@ -26,15 +26,13 @@ void XPLDirect::begin(const char *devicename)
 
 int XPLDirect::xloop(void)
 {
-  // long dec;
-  int i;
   _processSerial();
   if (!_allDataRefsRegistered)
   {
     return _connectionStatus;
   }
   // process datarefs to send
-  for (i = 0; i < _dataRefsCount; i++)
+  for (int i = 0; i < _dataRefsCount; i++)
   {
     if (_dataRefs[i]->dataRefHandle >= 0 && (_dataRefs[i]->dataRefRWType == XPL_WRITE || _dataRefs[i]->dataRefRWType == XPL_READWRITE))
     {
@@ -73,36 +71,53 @@ int XPLDirect::xloop(void)
 
 int XPLDirect::commandTrigger(int commandHandle)
 {
-  if (!_commands[commandHandle]) return -1; // inactive command
+  if (!_commands[commandHandle])
+    return -1; // inactive command
   _sendPacketInt(XPLCMD_COMMANDTRIGGER, _commands[commandHandle]->commandHandle, 1);
   return 0;
 }
 
 int XPLDirect::commandTrigger(int commandHandle, int triggerCount)
 {
-  if (!_commands[commandHandle]) return -1; // inactive command
+  if (!_commands[commandHandle])
+    return -1; // inactive command
   _sendPacketInt(XPLCMD_COMMANDTRIGGER, _commands[commandHandle]->commandHandle, (long int)triggerCount);
   return 0;
 }
 
 int XPLDirect::commandStart(int commandHandle)
 {
-	if (!_commands[commandHandle]) return -1; // inactive command
-	_sendPacketVoid(XPLCMD_COMMANDSTART, _commands[commandHandle]->commandHandle);
-	return 0;
+  if (!_commands[commandHandle])
+    return -1; // inactive command
+  _sendPacketVoid(XPLCMD_COMMANDSTART, _commands[commandHandle]->commandHandle);
+  return 0;
 }
 
 int XPLDirect::commandEnd(int commandHandle)
 {
-	if (!_commands[commandHandle]) return -1; // inactive command
-	_sendPacketVoid(XPLCMD_COMMANDEND, _commands[commandHandle]->commandHandle);
-	return 0;
+  if (!_commands[commandHandle])
+    return -1; // inactive command
+  _sendPacketVoid(XPLCMD_COMMANDEND, _commands[commandHandle]->commandHandle);
+  return 0;
 }
 
 int XPLDirect::connectionStatus()
 {
   return _connectionStatus;
 }
+
+int XPLDirect::sendDebugMessage(const char* msg)
+{
+  _sendPacketString(XPLCMD_PRINTDEBUG, (char *)msg);
+  return 1;
+}
+
+int XPLDirect::sendSpeakMessage(const char* msg)
+{
+  _sendPacketString(XPLCMD_SPEAK, (char *)msg);
+  return 1;
+}
+
 
 int XPLDirect::hasUpdated(int handle)
 {
@@ -317,7 +332,7 @@ void XPLDirect::_sendPacketFloat(int command, int handle, float value) // for fl
 {
   if (handle >= 0)
   {
-    // some boards cant do sprintf with floats so this is a workaround. 
+    // some boards cant do sprintf with floats so this is a workaround.
     char tmp[16];
     dtostrf(value, 6, 4, tmp);
     sprintf(_sendBuffer, "%c%c%3.3i%s%c", XPLDIRECT_PACKETHEADER, command, handle, tmp, XPLDIRECT_PACKETTRAILER);
@@ -399,7 +414,7 @@ int XPLDirect::allDataRefsRegistered()
   return _allDataRefsRegistered;
 }
 
-int XPLDirect::registerDataRef(const XPLSTRING *datarefName, int rwmode, unsigned int rate, float divider, long int *value)
+int XPLDirect::registerDataRef(XPString_t *datarefName, int rwmode, unsigned int rate, float divider, long int *value)
 {
   if (_dataRefsCount >= XPLDIRECT_MAXDATAREFS_ARDUINO)
   {
@@ -420,7 +435,7 @@ int XPLDirect::registerDataRef(const XPLSTRING *datarefName, int rwmode, unsigne
   return (_dataRefsCount - 1);
 }
 
-int XPLDirect::registerDataRef(const XPLSTRING *datarefName, int rwmode, unsigned int rate, float divider, long int *value, int index)
+int XPLDirect::registerDataRef(XPString_t *datarefName, int rwmode, unsigned int rate, float divider, long int *value, int index)
 {
   if (_dataRefsCount >= XPLDIRECT_MAXDATAREFS_ARDUINO)
   {
@@ -441,7 +456,7 @@ int XPLDirect::registerDataRef(const XPLSTRING *datarefName, int rwmode, unsigne
   return (_dataRefsCount - 1);
 }
 
-int XPLDirect::registerDataRef(const XPLSTRING *datarefName, int rwmode, unsigned int rate, float divider, float *value)
+int XPLDirect::registerDataRef(XPString_t *datarefName, int rwmode, unsigned int rate, float divider, float *value)
 {
   if (_dataRefsCount >= XPLDIRECT_MAXDATAREFS_ARDUINO)
   {
@@ -462,7 +477,7 @@ int XPLDirect::registerDataRef(const XPLSTRING *datarefName, int rwmode, unsigne
   return (_dataRefsCount - 1);
 }
 
-int XPLDirect::registerDataRef(const XPLSTRING *datarefName, int rwmode, unsigned int rate, float divider, float *value, int index)
+int XPLDirect::registerDataRef(XPString_t *datarefName, int rwmode, unsigned int rate, float divider, float *value, int index)
 {
   if (_dataRefsCount >= XPLDIRECT_MAXDATAREFS_ARDUINO)
   {
@@ -482,7 +497,27 @@ int XPLDirect::registerDataRef(const XPLSTRING *datarefName, int rwmode, unsigne
   return (_dataRefsCount - 1);
 }
 
-int XPLDirect::registerCommand(const XPLSTRING *commandName) // user will trigger commands with commandTrigger
+int XPLDirect::registerDataRef(XPString_t *datarefName, int rwmode, unsigned int rate, char *value)
+{
+  if (_dataRefsCount >= XPLDIRECT_MAXDATAREFS_ARDUINO)
+  {
+    return -1;
+  }
+  _dataRefs[_dataRefsCount] = new _dataRefStructure;
+  _dataRefs[_dataRefsCount]->dataRefName = datarefName;
+  _dataRefs[_dataRefsCount]->dataRefRWType = rwmode;
+  _dataRefs[_dataRefsCount]->updateRate = rate;
+  _dataRefs[_dataRefsCount]->dataRefVARType = XPL_DATATYPE_STRING;
+  _dataRefs[_dataRefsCount]->latestValue = (void *)value;
+  _dataRefs[_dataRefsCount]->lastSentIntValue = 0;
+  _dataRefs[_dataRefsCount]->arrayIndex = 0;     // not used unless we are referencing an array
+  _dataRefs[_dataRefsCount]->dataRefHandle = -1; // invalid until assigned by xplane
+  _dataRefsCount++;
+  _allDataRefsRegistered = 0;
+  return (_dataRefsCount - 1);
+}
+
+int XPLDirect::registerCommand(XPString_t *commandName) // user will trigger commands with commandTrigger
 {
   if (_commandsCount >= XPLDIRECT_MAXCOMMANDS_ARDUINO)
   {
@@ -496,3 +531,4 @@ int XPLDirect::registerCommand(const XPLSTRING *commandName) // user will trigge
   return (_commandsCount - 1);
 }
 
+XPLDirect XP(&Serial);
