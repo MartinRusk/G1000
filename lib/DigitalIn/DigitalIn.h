@@ -1,10 +1,13 @@
 #ifndef Mux_h
 #define Mux_h
-#include <Adafruit_MCP23X17.h>
 
 #define NOT_USED 255
-#define MUX_MAX_NUMBER 12
+#define MUX_MAX_NUMBER 6
 #define MCP_MAX_NUMBER 0
+
+#if MCP_MAX_NUMBER > 0
+#include <Adafruit_MCP23X17.h>
+#endif
 
 class DigitalIn_
 {
