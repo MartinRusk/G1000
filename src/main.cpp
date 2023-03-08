@@ -1,6 +1,13 @@
 #include <Arduino.h>
 #include <MemoryFree.h>
-#include <XPLDevices.h>
+#include <XPLDirect.h>
+#include <Button.h>
+#include <Encoder.h>
+#include <Switch.h>
+#include <LedShift.h>
+#include <Timer.h>
+#include <DigitalIn.h>
+#include <AnalogIn.h>
 
 // #define DEBUG 1
 
@@ -108,7 +115,8 @@ long int sw_fuel_lever2 = 2;
 // Setup
 void setup()
 {
-  XPsetup("G1000 MFD");
+  Serial.begin(XPLDIRECT_BAUDRATE);
+  XP.begin("G1000 MFD");
 
   // Setup Multiplexers
   DigitalIn.setMux(1, 0, 2, 3);
@@ -299,89 +307,74 @@ void setup()
   XP.registerDataRef(F("aerobask/eng/sw_fuel_lever2"), XPL_READWRITE, 100, 0, &sw_fuel_lever2);
 }
 
-void handleCommand(Button *btn, bool input)
-{
-  btn->handle(input);
-  int cmdPush = btn->getCommand();
-  if (btn->pressed())
-  {
-    XP.commandStart(cmdPush);
-  }
-  if (btn->released())
-  {
-    XP.commandEnd(cmdPush);
-  }
-}
-
 // Main loop
 void loop()
 {
-//   XP.xloop();
-//   DigitalIn.handle();
-  XPloop();
+  XP.xloop();
+  DigitalIn.handle();
   leds.handle();
 
-  handleCommand(&encNavInner);
-  handleCommand(&encNavOuter);
-  handleCommand(&encComInner);
-  handleCommand(&encComOuter);
-  handleCommand(&encCourse);
-  handleCommand(&encBaro);
-  handleCommand(&encAltInner);
-  handleCommand(&encAltOuter);
-  handleCommand(&encFMSInner);
-  handleCommand(&encFMSOuter);
-  handleCommand(&btnDirect);
-  handleCommand(&btnFPL);
-  handleCommand(&btnCLR);
-  handleCommand(&btnMENU);
-  handleCommand(&btnPROC);
-  handleCommand(&btnENT);
-  handleCommand(&btnAP);
-  handleCommand(&btnFD);
-  handleCommand(&btnNAV);
-  handleCommand(&btnALT);
-  handleCommand(&btnVS);
-  handleCommand(&btnFLC);
-  handleCommand(&btnYD);
-  handleCommand(&btnHDG);
-  handleCommand(&btnAPR);
-  handleCommand(&btnVNAV);
-  handleCommand(&btnUP);
-  handleCommand(&btnDN);
-  handleCommand(&encNavVol);
-  handleCommand(&btnNavFF);
-  handleCommand(&btnSoft1);
-  handleCommand(&btnSoft2);
-  handleCommand(&btnSoft3);
-  handleCommand(&btnSoft4);
-  handleCommand(&btnSoft5);
-  handleCommand(&btnSoft6);
-  handleCommand(&btnSoft7);
-  handleCommand(&btnSoft8);
-  handleCommand(&btnSoft9);
-  handleCommand(&btnSoft10);
-  handleCommand(&btnSoft11);
-  handleCommand(&btnSoft12);
-  handleCommand(&encComVol);
-  handleCommand(&btnComFF);
-  handleCommand(&encRange);
-  // handle pan stick manually due to logical operations for inputs
-  handleCommand(&btnPanPush, DigitalIn.getBit(4, 0) &&
-                                 !DigitalIn.getBit(4, 1) && !DigitalIn.getBit(4, 2) &&
-                                 !DigitalIn.getBit(4, 3) && !DigitalIn.getBit(4, 4));
-  handleCommand(&btnPanUp, DigitalIn.getBit(4, 0) && DigitalIn.getBit(4, 1));
-  handleCommand(&btnPanLeft, DigitalIn.getBit(4, 0) && DigitalIn.getBit(4, 2));
-  handleCommand(&btnPanDown, DigitalIn.getBit(4, 0) && DigitalIn.getBit(4, 3));
-  handleCommand(&btnPanRight, DigitalIn.getBit(4, 0) && DigitalIn.getBit(4, 4));
+  encNavInner.handleCommand();
+  encNavOuter.handleCommand();
+  encComInner.handleCommand();
+  encComOuter.handleCommand();
+  encCourse.handleCommand();
+  encBaro.handleCommand();
+  encAltInner.handleCommand();
+  encAltOuter.handleCommand();
+  encFMSInner.handleCommand();
+  encFMSOuter.handleCommand();
+  btnDirect.handleCommand();
+  btnFPL.handleCommand();
+  btnCLR.handleCommand();
+  btnMENU.handleCommand();
+  btnPROC.handleCommand();
+  btnENT.handleCommand();
+  btnAP.handleCommand();
+  btnFD.handleCommand();
+  btnNAV.handleCommand();
+  btnALT.handleCommand();
+  btnVS.handleCommand();
+  btnFLC.handleCommand();
+  btnYD.handleCommand();
+  btnHDG.handleCommand();
+  btnAPR.handleCommand();
+  btnVNAV.handleCommand();
+  btnUP.handleCommand();
+  btnDN.handleCommand();
+  encNavVol.handleCommand();
+  btnNavFF.handleCommand();
+  btnSoft1.handleCommand();
+  btnSoft2.handleCommand();
+  btnSoft3.handleCommand();
+  btnSoft4.handleCommand();
+  btnSoft5.handleCommand();
+  btnSoft6.handleCommand();
+  btnSoft7.handleCommand();
+  btnSoft8.handleCommand();
+  btnSoft9.handleCommand();
+  btnSoft10.handleCommand();
+  btnSoft11.handleCommand();
+  btnSoft12.handleCommand();
+  encComVol.handleCommand();
+  btnComFF.handleCommand();
+  encRange.handleCommand();
 
-  handleCommand(&encRudderTrim);
-  handleCommand(&btnGearTest);
+  // handle pan stick with logical dependecies
+  btnPanPush.handleCommand(!DigitalIn.getBit(4, 1) && !DigitalIn.getBit(4, 2) &&
+                           !DigitalIn.getBit(4, 3) && !DigitalIn.getBit(4, 4));
+  btnPanUp.handleCommand(DigitalIn.getBit(4, 0));
+  btnPanLeft.handleCommand(DigitalIn.getBit(4, 0));
+  btnPanDown.handleCommand(DigitalIn.getBit(4, 0));
+  btnPanRight.handleCommand(DigitalIn.getBit(4, 0));
 
-  handleCommand(&swLightStrobe);
-  handleCommand(&swLightPosition);
-  handleCommand(&swLightTaxi);
-  handleCommand(&swLightLanding);
+  encRudderTrim.handleCommand();
+  btnGearTest.handleCommand();
+
+  swLightStrobe.handleCommand();
+  swLightPosition.handleCommand();
+  swLightTaxi.handleCommand();
+  swLightLanding.handleCommand();
 
   // Sync Switches 
   if (tmrSync.isTick())

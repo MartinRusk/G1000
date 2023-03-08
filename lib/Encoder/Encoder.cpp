@@ -1,4 +1,5 @@
 #include <Arduino.h>
+#include <XPLDirect.h>
 #include "Encoder.h"
 
 #define DEBOUNCE_DELAY 5
@@ -176,5 +177,29 @@ int Encoder::getCommand(EncCmd_t cmd)
   default:
     return -1;
     break;
+  }
+}
+
+void Encoder::handleCommand()
+{
+  handle();
+  if (up())
+  {
+    XP.commandTrigger(_cmdUp);
+  }
+  if (down())
+  {
+    XP.commandTrigger(_cmdDown);
+  }
+  if (_cmdPush >= 0)
+  {
+    if (pressed())
+    {
+      XP.commandStart(_cmdPush);
+    }
+    if (released())
+    {
+      XP.commandEnd(_cmdPush);
+    }
   }
 }

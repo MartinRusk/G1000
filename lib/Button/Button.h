@@ -15,6 +15,8 @@ public:
   bool engaged();
   void setCommand(int cmdPush);
   int getCommand();
+  void handleCommand();
+  void handleCommand(bool input);
 protected:
   uint8_t _mux;
   uint8_t _pin;

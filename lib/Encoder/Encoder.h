@@ -31,6 +31,7 @@ public:
   void setCommand(int cmdUp, int cmdDown, int cmdPush);
   void setCommand(int cmdUp, int cmdDown);
   int getCommand(EncCmd_t cmd);
+  void handleCommand();
 private:
   uint8_t _mux;
   uint8_t _pin1, _pin2, _pin3;

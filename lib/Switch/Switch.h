@@ -18,6 +18,7 @@ public:
   SwState_t state();
   void setCommand(int cmdOn, int cmdOff);
   int getCommand();
+  void handleCommand();
 protected:
   uint8_t _mux;
   uint8_t _pin;

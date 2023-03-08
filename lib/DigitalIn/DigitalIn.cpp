@@ -1,8 +1,9 @@
 #include <Arduino.h>
 #include "DigitalIn.h"
 
-#define MCP_PIN 250
+#define MCP_PIN 254
 
+// constructor
 DigitalIn_::DigitalIn_()
 {
   _numPins = 0;
@@ -12,6 +13,7 @@ DigitalIn_::DigitalIn_()
   }
 }
 
+// configure 74HC4067 adress pins S0-S3
 void DigitalIn_::setMux(uint8_t s0, uint8_t s1, uint8_t s2, uint8_t s3)
 {
   _s0 = s0;
@@ -24,7 +26,7 @@ void DigitalIn_::setMux(uint8_t s0, uint8_t s1, uint8_t s2, uint8_t s3)
   pinMode(_s3, OUTPUT);
 }
 
-// add a pin to mux
+// Add a 74HC4067
 bool DigitalIn_::addMux(uint8_t pin)
 {
   if (_numPins >= MUX_MAX_NUMBER)
@@ -37,6 +39,7 @@ bool DigitalIn_::addMux(uint8_t pin)
 }
 
 #if MCP_MAX_NUMBER > 0
+// Add a MCP23017
 bool DigitalIn_::addMCP(uint8_t adress)
 {
   if (_numMCP >= MCP_MAX_NUMBER)

@@ -1,4 +1,5 @@
 #include <Arduino.h>
+#include <XPLDirect.h>
 #include "Switch.h"
 
 #define DEBOUNCE_DELAY 10;
@@ -67,6 +68,14 @@ int Switch::getCommand()
   default:
     return -1;
     break;
+  }
+}
+
+void Switch::handleCommand()
+{
+  if (handle())
+  {
+    XP.commandTrigger(getCommand());
   }
 }
 

@@ -1,4 +1,5 @@
 #include <Arduino.h>
+#include <XPLDirect.h>
 #include "Button.h"
 
 #define DEBOUNCE_DELAY 5
@@ -33,9 +34,10 @@ void Button::handle()
   handle(DigitalIn.getBit(_mux, _pin));
 }
 
+// use additional bit for input (masking)
 void Button::handle(bool input)
 {
-  if (input)
+  if (input && DigitalIn.getBit(_mux, _pin))
   {
     if (_state == 0)
     {
@@ -85,6 +87,32 @@ void Button::setCommand(int cmdPush)
 int Button::getCommand()
 {
   return _cmdPush;
+}
+
+void Button::handleCommand()
+{
+  handle();
+  if (pressed())
+  {
+    XP.commandStart(_cmdPush);
+  }
+  if (released())
+  {
+    XP.commandEnd(_cmdPush);
+  }
+}
+
+void Button::handleCommand(bool input)
+{
+  handle(input);
+  if (pressed())
+  {
+    XP.commandStart(_cmdPush);
+  }
+  if (released())
+  {
+    XP.commandEnd(_cmdPush);
+  }
 }
 
 RepeatButton::RepeatButton(uint8_t mux, uint8_t pin, uint32_t delay) : Button(mux, pin)
