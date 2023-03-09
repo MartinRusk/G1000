@@ -12,17 +12,17 @@
 // #define DEBUG 1
 
 // MUX 0
-Encoder encNavInner(0, 1, 2, 0, eEnc4Pulse);
-Encoder encNavOuter(0, 4, 3, NOT_USED, eEnc4Pulse);
-Encoder encComInner(0, 6, 7, 5, eEnc4Pulse);
-Encoder encComOuter(0, 9, 8, NOT_USED, eEnc4Pulse);
-Encoder encCourse(0, 11, 12, 10, eEnc4Pulse);
-Encoder encBaro(0, 14, 13, NOT_USED, eEnc4Pulse);
+Encoder encNavInner(0, 1, 2, 0, enc4Pulse);
+Encoder encNavOuter(0, 4, 3, NOT_USED, enc4Pulse);
+Encoder encComInner(0, 6, 7, 5, enc4Pulse);
+Encoder encComOuter(0, 9, 8, NOT_USED, enc4Pulse);
+Encoder encCourse(0, 11, 12, 10, enc4Pulse);
+Encoder encBaro(0, 14, 13, NOT_USED, enc4Pulse);
 // MUX 1
-Encoder encAltInner(1, 1, 2, 0, eEnc4Pulse);
-Encoder encAltOuter(1, 4, 3, NOT_USED, eEnc4Pulse);
-Encoder encFMSInner(1, 6, 7, 5, eEnc4Pulse);
-Encoder encFMSOuter(1, 9, 8, NOT_USED, eEnc4Pulse);
+Encoder encAltInner(1, 1, 2, 0, enc4Pulse);
+Encoder encAltOuter(1, 4, 3, NOT_USED, enc4Pulse);
+Encoder encFMSInner(1, 6, 7, 5, enc4Pulse);
+Encoder encFMSOuter(1, 9, 8, NOT_USED, enc4Pulse);
 Button btnDirect(1, 10);
 Button btnFPL(1, 11);
 Button btnCLR(1, 12);
@@ -42,7 +42,7 @@ Button btnAPR(2, 8);
 Button btnVNAV(2, 9);
 Button btnUP(2, 10);
 Button btnDN(2, 11);
-Encoder encNavVol(2, 12, 13, 14, eEnc4Pulse);
+Encoder encNavVol(2, 12, 13, 14, enc4Pulse);
 Button btnNavFF(2, 15);
 // MUX3
 Button btnSoft1(3, 0);
@@ -57,19 +57,19 @@ Button btnSoft9(3, 8);
 Button btnSoft10(3, 9);
 Button btnSoft11(3, 10);
 Button btnSoft12(3, 11);
-Encoder encComVol(3, 12, 13, 14, eEnc4Pulse);
+Encoder encComVol(3, 12, 13, 14, enc4Pulse);
 Button btnComFF(3, 15);
 // MUX4 Pan/Zoom
-Encoder encRange(4, 6, 5, 0, eEnc2Pulse);
+Encoder encRange(4, 6, 5, 0, enc2Pulse);
 Button btnPanPush(4, 0);
 RepeatButton btnPanUp(4, 1, 250);
 RepeatButton btnPanLeft(4, 2, 250);
 RepeatButton btnPanDown(4, 3, 250);
 RepeatButton btnPanRight(4, 4, 250);
-Encoder encHeading(4, 12, 13, 14, eEnc4Pulse);
+Encoder encHeading(4, 12, 13, 14, enc4Pulse);
 
 // MFD specific
-Encoder encRudderTrim(4, 8, 9, 10, eEnc4Pulse);
+Encoder encRudderTrim(4, 8, 9, 10, enc4Pulse);
 Switch swLightLanding(5, 0);
 Switch swLightTaxi(5, 1);
 Switch swLightPosition(5, 2);
@@ -83,8 +83,8 @@ Switch swGear(5, 11);
 Switch2 swFlaps(5, 12, 13);
 
 // Potentiometers
-AnalogIn potInstr(0, eUnipolar, 10);
-AnalogIn potFlood(1, eUnipolar, 10);
+AnalogIn potInstr(0, unipolar, 10);
+AnalogIn potFlood(1, unipolar, 10);
 
 // LEDs
 LedShift leds(16, 14, 15);
@@ -388,16 +388,13 @@ void loop()
   }
 
   swFlaps.handle();
-  SwState_t state = swFlaps.state();
-  flap_handle_request_ratio = (state == eSwitchOn) ? 1.0 : (state == eSwitchOn2) ? 0.0 : 0.5;
+  flap_handle_request_ratio = swFlaps.on() ? 1.0 : swFlaps.on2() ? 0.0 : 0.5;
   swGear.handle();
-  gear_handle_down = (swGear.state() == eSwitchOn) ? 0.0 : 1.0;
+  gear_handle_down = (swGear.on()) ? 0.0 : 1.0;
   swFuelLeft.handle();
-  state = swFuelLeft.state();
-  sw_fuel_lever1 = (state == eSwitchOn) ? 2 : (state == eSwitchOn2) ? 0 : 1;
+  sw_fuel_lever1 = swFuelLeft.on() ? 2 : swFuelLeft.on2() ? 0 : 1;
   swFuelRight.handle();
-  state = swFuelRight.state();
-  sw_fuel_lever2 = (state == eSwitchOn) ? 2 : (state == eSwitchOn2) ? 0 : 1;
+  sw_fuel_lever2 = swFuelRight.on() ? 2 : swFuelRight.on2() ? 0 : 1;
   
   light_instr = potInstr.value();
   light_flood = potFlood.value();
