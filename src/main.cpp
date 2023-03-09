@@ -1,13 +1,6 @@
 #include <Arduino.h>
 #include <MemoryFree.h>
-#include <XPLDirect.h>
-#include <Button.h>
-#include <Encoder.h>
-#include <Switch.h>
-#include <LedShift.h>
-#include <Timer.h>
-#include <DigitalIn.h>
-#include <AnalogIn.h>
+#include <XPLDevices.h>
 
 // #define DEBUG 1
 
