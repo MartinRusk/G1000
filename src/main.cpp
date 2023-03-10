@@ -307,67 +307,67 @@ void loop()
   DigitalIn.handle();
   leds.handle();
 
-  encNavInner.handleCommand();
-  encNavOuter.handleCommand();
-  encComInner.handleCommand();
-  encComOuter.handleCommand();
-  encCourse.handleCommand();
-  encBaro.handleCommand();
-  encAltInner.handleCommand();
-  encAltOuter.handleCommand();
-  encFMSInner.handleCommand();
-  encFMSOuter.handleCommand();
-  btnDirect.handleCommand();
-  btnFPL.handleCommand();
-  btnCLR.handleCommand();
-  btnMENU.handleCommand();
-  btnPROC.handleCommand();
-  btnENT.handleCommand();
-  btnAP.handleCommand();
-  btnFD.handleCommand();
-  btnNAV.handleCommand();
-  btnALT.handleCommand();
-  btnVS.handleCommand();
-  btnFLC.handleCommand();
-  btnYD.handleCommand();
-  btnHDG.handleCommand();
-  btnAPR.handleCommand();
-  btnVNAV.handleCommand();
-  btnUP.handleCommand();
-  btnDN.handleCommand();
-  encNavVol.handleCommand();
-  btnNavFF.handleCommand();
-  btnSoft1.handleCommand();
-  btnSoft2.handleCommand();
-  btnSoft3.handleCommand();
-  btnSoft4.handleCommand();
-  btnSoft5.handleCommand();
-  btnSoft6.handleCommand();
-  btnSoft7.handleCommand();
-  btnSoft8.handleCommand();
-  btnSoft9.handleCommand();
-  btnSoft10.handleCommand();
-  btnSoft11.handleCommand();
-  btnSoft12.handleCommand();
-  encComVol.handleCommand();
-  btnComFF.handleCommand();
-  encRange.handleCommand();
+  encNavInner.handleXP();
+  encNavOuter.handleXP();
+  encComInner.handleXP();
+  encComOuter.handleXP();
+  encCourse.handleXP();
+  encBaro.handleXP();
+  encAltInner.handleXP();
+  encAltOuter.handleXP();
+  encFMSInner.handleXP();
+  encFMSOuter.handleXP();
+  btnDirect.handleXP();
+  btnFPL.handleXP();
+  btnCLR.handleXP();
+  btnMENU.handleXP();
+  btnPROC.handleXP();
+  btnENT.handleXP();
+  btnAP.handleXP();
+  btnFD.handleXP();
+  btnNAV.handleXP();
+  btnALT.handleXP();
+  btnVS.handleXP();
+  btnFLC.handleXP();
+  btnYD.handleXP();
+  btnHDG.handleXP();
+  btnAPR.handleXP();
+  btnVNAV.handleXP();
+  btnUP.handleXP();
+  btnDN.handleXP();
+  encNavVol.handleXP();
+  btnNavFF.handleXP();
+  btnSoft1.handleXP();
+  btnSoft2.handleXP();
+  btnSoft3.handleXP();
+  btnSoft4.handleXP();
+  btnSoft5.handleXP();
+  btnSoft6.handleXP();
+  btnSoft7.handleXP();
+  btnSoft8.handleXP();
+  btnSoft9.handleXP();
+  btnSoft10.handleXP();
+  btnSoft11.handleXP();
+  btnSoft12.handleXP();
+  encComVol.handleXP();
+  btnComFF.handleXP();
+  encRange.handleXP();
 
   // handle pan stick with logical dependecies
-  btnPanPush.handleCommand(!DigitalIn.getBit(4, 1) && !DigitalIn.getBit(4, 2) &&
-                           !DigitalIn.getBit(4, 3) && !DigitalIn.getBit(4, 4));
-  btnPanUp.handleCommand(DigitalIn.getBit(4, 0));
-  btnPanLeft.handleCommand(DigitalIn.getBit(4, 0));
-  btnPanDown.handleCommand(DigitalIn.getBit(4, 0));
-  btnPanRight.handleCommand(DigitalIn.getBit(4, 0));
+  btnPanPush.handleXP(!DigitalIn.getBit(4, 1) && !DigitalIn.getBit(4, 2) &&
+                      !DigitalIn.getBit(4, 3) && !DigitalIn.getBit(4, 4));
+  btnPanUp.handleXP(DigitalIn.getBit(4, 0));
+  btnPanLeft.handleXP(DigitalIn.getBit(4, 0));
+  btnPanDown.handleXP(DigitalIn.getBit(4, 0));
+  btnPanRight.handleXP(DigitalIn.getBit(4, 0));
 
-  encRudderTrim.handleCommand();
-  btnGearTest.handleCommand();
+  encRudderTrim.handleXP();
+  btnGearTest.handleXP();
 
-  swLightStrobe.handleCommand();
-  swLightPosition.handleCommand();
-  swLightTaxi.handleCommand();
-  swLightLanding.handleCommand();
+  swLightStrobe.handleXP();
+  swLightPosition.handleXP();
+  swLightTaxi.handleXP();
+  swLightLanding.handleXP();
 
   // Sync Switches 
   if (tmrSync.isTick())
@@ -381,15 +381,17 @@ void loop()
   }
 
   swFlaps.handle();
-  flap_handle_request_ratio = swFlaps.on() ? 1.0 : swFlaps.on2() ? 0.0 : 0.5;
+  flap_handle_request_ratio = swFlaps.value(1.0, 0.5, 0.0);
   swGear.handle();
-  gear_handle_down = (swGear.on()) ? 0.0 : 1.0;
+  gear_handle_down = swGear.value(0.0, 1.0);
   swFuelLeft.handle();
-  sw_fuel_lever1 = swFuelLeft.on() ? 2 : swFuelLeft.on2() ? 0 : 1;
+  sw_fuel_lever1 = swFuelLeft.value(2.0, 1.0, 0.0);
   swFuelRight.handle();
-  sw_fuel_lever2 = swFuelRight.on() ? 2 : swFuelRight.on2() ? 0 : 1;
-  
+  sw_fuel_lever2 = swFuelRight.value(2.0, 1.0, 0.0);
+
+  potInstr.handle();
   light_instr = potInstr.value();
+  potFlood.handle();
   light_flood = potFlood.value();
 
   // Update LEDs
