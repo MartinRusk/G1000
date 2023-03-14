@@ -102,9 +102,6 @@ float light_flood = 0;
 long int gear_handle_down;
 float flap_handle_request_ratio;
 
-long int sw_fuel_lever1 = 2;
-long int sw_fuel_lever2 = 2;
-
 // Setup
 void setup()
 {
@@ -283,21 +280,23 @@ void setup()
   swFuelAuxRight.setCommand(
       XP.registerCommand(F("aerobask/auxfuel/pump2_up")),
       XP.registerCommand(F("aerobask/auxfuel/pump2_dn")));
+  swFuelLeft.setCommand(
+      XP.registerCommand(F("aerobask/eng/fuel_lever1_dn")),
+      XP.registerCommand(F("aerobask/eng/fuel_lever1_up")));
+  swFuelRight.setCommand(
+      XP.registerCommand(F("aerobask/eng/fuel_lever2_dn")),
+      XP.registerCommand(F("aerobask/eng/fuel_lever2_up")));
 
   XP.registerDataRef(F("sim/flightmodel2/gear/deploy_ratio"), XPL_READ, 100, 0, &gear_ratio[0], 0);
   XP.registerDataRef(F("sim/flightmodel2/gear/deploy_ratio"), XPL_READ, 100, 0, &gear_ratio[1], 1);
   XP.registerDataRef(F("sim/flightmodel2/gear/deploy_ratio"), XPL_READ, 100, 0, &gear_ratio[2], 2);
   // XP.registerDataRef(F("sim/cockpit2/annunciators/gear_unsafe"), XPL_READ, 100, 1.0, &gear_unsafe);
-  XP.registerDataRef(F("sim/cockpit/warnings/annunciators/gear_unsafe"), XPL_READ, 100, 0, &gear_unsafe);
+  XP.registerDataRef(F("sim/cockpit/warnings/annunciators/gear_unsafe"), XPL_READ, 100, 1, &gear_unsafe);
   XP.registerDataRef(F("sim/flightmodel2/controls/flap1_deploy_ratio"), XPL_READ, 100, 0, &flap_ratio);
-
-  XP.registerDataRef(F("sim/cockpit2/switches/instrument_brightness_ratio"), XPL_READWRITE, 100, 0, &light_instr, 0);
-  XP.registerDataRef(F("sim/cockpit2/switches/panel_brightness_ratio"), XPL_READWRITE, 100, 0, &light_flood, 0);
-
+  XP.registerDataRef(F("sim/cockpit2/switches/instrument_brightness_ratio"), XPL_WRITE, 100, 0, &light_instr, 0);
+  XP.registerDataRef(F("sim/cockpit2/switches/panel_brightness_ratio"), XPL_WRITE, 100, 0, &light_flood, 0);
   XP.registerDataRef(F("sim/cockpit2/controls/gear_handle_down"), XPL_READWRITE, 100, 0, &gear_handle_down);
   XP.registerDataRef(F("sim/cockpit2/controls/flap_handle_request_ratio"), XPL_READWRITE, 100, 0, &flap_handle_request_ratio);
-  XP.registerDataRef(F("aerobask/eng/sw_fuel_lever1"), XPL_READWRITE, 100, 0, &sw_fuel_lever1);
-  XP.registerDataRef(F("aerobask/eng/sw_fuel_lever2"), XPL_READWRITE, 100, 0, &sw_fuel_lever2);
 }
 
 // Main loop
@@ -369,6 +368,11 @@ void loop()
   swLightTaxi.handleXP();
   swLightLanding.handleXP();
 
+  swFuelLeft.handleXP();
+  swFuelRight.handleXP();
+  swFuelAuxLeft.handleXP();
+  swFuelAuxRight.handleXP();
+
   // Sync Switches 
   if (tmrSync.isTick())
   {
@@ -378,16 +382,20 @@ void loop()
     XP.commandTrigger(swLightLanding.getCommand());
     XP.commandTrigger(swFuelAuxLeft.getCommand());
     XP.commandTrigger(swFuelAuxRight.getCommand());
+    if (swFuelLeft.on() || swFuelLeft.on2())
+    {
+      XP.commandTrigger(swFuelLeft.getCommand(), 2);
+    }
+    if (swFuelRight.on() || swFuelRight.on2())
+    {
+      XP.commandTrigger(swFuelRight.getCommand(), 2);
+    }
   }
 
   swFlaps.handle();
   flap_handle_request_ratio = swFlaps.value(1.0, 0.5, 0.0);
   swGear.handle();
   gear_handle_down = swGear.value(0.0, 1.0);
-  swFuelLeft.handle();
-  sw_fuel_lever1 = swFuelLeft.value(2.0, 1.0, 0.0);
-  swFuelRight.handle();
-  sw_fuel_lever2 = swFuelRight.value(2.0, 1.0, 0.0);
 
   potInstr.handle();
   light_instr = potInstr.value();
@@ -429,7 +437,7 @@ void loop()
   leds.set(LED_GEAR_NOSE, (gear_ratio[0] > 0.99) ? ledOn : ledOff);
   leds.set(LED_GEAR_LEFT, (gear_ratio[1] > 0.99) ? ledOn : ledOff);
   leds.set(LED_GEAR_RIGHT, (gear_ratio[2] > 0.99) ? ledOn : ledOff);
-  leds.set(LED_GEAR_UNSAFE, (gear_unsafe > 0) ? ledMedium : ledOff);
+  leds.set(LED_GEAR_UNSAFE, (gear_unsafe != 0) ? ledOn : ledOff);
 
 #if DEBUG
   static int count = 0;
