@@ -1,0 +1,266 @@
+#include <Arduino.h>
+#include <MemoryFree.h>
+#include <XPLDevices.h>
+
+#if G1000_PFD
+
+// MUX 0
+Encoder encNavInner(0, 1, 2, 0, enc4Pulse);
+Encoder encNavOuter(0, 4, 3, NOT_USED, enc4Pulse);
+Encoder encComInner(0, 6, 7, 5, enc4Pulse);
+Encoder encComOuter(0, 9, 8, NOT_USED, enc4Pulse);
+Encoder encCourse(0, 11, 12, 10, enc4Pulse);
+Encoder encBaro(0, 14, 13, NOT_USED, enc4Pulse);
+// MUX 1
+Encoder encAltInner(1, 1, 2, 0, enc4Pulse);
+Encoder encAltOuter(1, 4, 3, NOT_USED, enc4Pulse);
+Encoder encFMSInner(1, 6, 7, 5, enc4Pulse);
+Encoder encFMSOuter(1, 9, 8, NOT_USED, enc4Pulse);
+Button btnDirect(1, 10);
+Button btnFPL(1, 11);
+Button btnCLR(1, 12);
+Button btnMENU(1, 13);
+Button btnPROC(1, 14);
+Button btnENT(1, 15);
+// MUX 2
+
+Encoder encNavVol(2, 12, 13, 14, enc4Pulse);
+Button btnNavFF(2, 15);
+// MUX3
+Button btnSoft1(3, 0);
+Button btnSoft2(3, 1);
+Button btnSoft3(3, 2);
+Button btnSoft4(3, 3);
+Button btnSoft5(3, 4);
+Button btnSoft6(3, 5);
+Button btnSoft7(3, 6);
+Button btnSoft8(3, 7);
+Button btnSoft9(3, 8);
+Button btnSoft10(3, 9);
+Button btnSoft11(3, 10);
+Button btnSoft12(3, 11);
+Encoder encComVol(3, 12, 13, 14, enc4Pulse);
+Button btnComFF(3, 15);
+// MUX4 Pan/Zoom
+Encoder encRange(4, 6, 5, 0, enc2Pulse);
+Button btnPanPush(4, 0);
+RepeatButton btnPanUp(4, 1, 250);
+RepeatButton btnPanLeft(4, 2, 250);
+RepeatButton btnPanDown(4, 3, 250);
+RepeatButton btnPanRight(4, 4, 250);
+Encoder encHeading(4, 12, 13, 14, enc4Pulse);
+
+// MFD specific
+
+// LEDs
+LedShift leds(16, 14, 15);
+#define LED_DEICE_LOW 0
+#define LED_DEICE_MED 1
+#define LED_DEICE_HIGH 2
+
+// Timer for Main loop
+Timer tmrMain(1000.0);
+Timer tmrSync(1000.0);
+
+// DataRefs MUX 5
+
+// Setup
+void setup()
+{
+  Serial.begin(XPLDIRECT_BAUDRATE);
+  XP.begin("G1000 PFD");
+
+  // Setup Multiplexers
+  DigitalIn.setMux(1, 0, 2, 3);
+  DigitalIn.addMux(4); // MUX 0
+  DigitalIn.addMux(5); // MUX 1
+  DigitalIn.addMux(6); // MUX 2
+  DigitalIn.addMux(7); // MUX 3
+  DigitalIn.addMux(8); // MUX 4
+  DigitalIn.addMux(9); // MUX 5
+
+  // init led sequence
+  leds.set_all(ledOff);
+  for (int pin = 0; pin < 3; pin++)
+  {
+    leds.set(pin, ledOn);
+    leds.handle();
+    delay(100);
+  }
+  leds.set_all(ledOff);
+
+  encNavInner.setCommand(
+      XP.registerCommand(F("sim/GPS/g1000n1_nav_inner_up")),
+      XP.registerCommand(F("sim/GPS/g1000n1_nav_inner_down")),
+      XP.registerCommand(F("sim/GPS/g1000n1_nav12")));
+  encNavOuter.setCommand(
+      XP.registerCommand(F("sim/GPS/g1000n1_nav_outer_up")),
+      XP.registerCommand(F("sim/GPS/g1000n1_nav_outer_down")));
+  encComInner.setCommand(
+      XP.registerCommand(F("sim/GPS/g1000n1_com_inner_up")),
+      XP.registerCommand(F("sim/GPS/g1000n1_com_inner_down")),
+      XP.registerCommand(F("sim/GPS/g1000n1_com12")));
+  encComOuter.setCommand(
+      XP.registerCommand(F("sim/GPS/g1000n1_com_outer_up")),
+      XP.registerCommand(F("sim/GPS/g1000n1_com_outer_down")));
+  encCourse.setCommand(
+      XP.registerCommand(F("sim/GPS/g1000n1_crs_up")),
+      XP.registerCommand(F("sim/GPS/g1000n1_crs_down")),
+      XP.registerCommand(F("sim/GPS/g1000n1_crs_sync")));
+  encBaro.setCommand(
+      XP.registerCommand(F("sim/GPS/g1000n1_baro_up")),
+      XP.registerCommand(F("sim/GPS/g1000n1_baro_down")));
+
+  encAltInner.setCommand(
+      XP.registerCommand(F("sim/GPS/g1000n1_alt_inner_up")),
+      XP.registerCommand(F("sim/GPS/g1000n1_alt_inner_down")),
+      XP.registerCommand(F("sim/autopilot/altitude_sync")));
+  encAltOuter.setCommand(
+      XP.registerCommand(F("sim/GPS/g1000n1_alt_outer_up")),
+      XP.registerCommand(F("sim/GPS/g1000n1_alt_outer_down")));
+  encFMSInner.setCommand(
+      XP.registerCommand(F("sim/GPS/g1000n1_fms_inner_up")),
+      XP.registerCommand(F("sim/GPS/g1000n1_fms_inner_down")),
+      XP.registerCommand(F("sim/GPS/g1000n1_cursor")));
+  encFMSOuter.setCommand(
+      XP.registerCommand(F("sim/GPS/g1000n1_fms_outer_up")),
+      XP.registerCommand(F("sim/GPS/g1000n1_fms_outer_down")));
+  btnDirect.setCommand(
+      XP.registerCommand(F("sim/GPS/g1000n1_direct")));
+  btnFPL.setCommand(
+      XP.registerCommand(F("sim/GPS/g1000n1_fpl")));
+  btnCLR.setCommand(
+      XP.registerCommand(F("sim/GPS/g1000n1_clr")));
+  btnMENU.setCommand(
+      XP.registerCommand(F("sim/GPS/g1000n1_menu")));
+  btnPROC.setCommand(
+      XP.registerCommand(F("sim/GPS/g1000n1_proc")));
+  btnENT.setCommand(
+      XP.registerCommand(F("sim/GPS/g1000n1_ent")));
+
+  encNavVol.setCommand(
+      XP.registerCommand(F("sim/GPS/g1000n1_nvol_up")),
+      XP.registerCommand(F("sim/GPS/g1000n1_nvol_dn")),
+      XP.registerCommand(F("sim/GPS/g1000n1_nvol")));
+  btnNavFF.setCommand(
+      XP.registerCommand(F("sim/GPS/g1000n1_nav_ff")));
+
+  btnSoft1.setCommand(
+      XP.registerCommand(F("sim/GPS/g1000n1_softkey1")));
+  btnSoft2.setCommand(
+      XP.registerCommand(F("sim/GPS/g1000n1_softkey2")));
+  btnSoft3.setCommand(
+      XP.registerCommand(F("sim/GPS/g1000n1_softkey3")));
+  btnSoft4.setCommand(
+      XP.registerCommand(F("sim/GPS/g1000n1_softkey4")));
+  btnSoft5.setCommand(
+      XP.registerCommand(F("sim/GPS/g1000n1_softkey5")));
+  btnSoft6.setCommand(
+      XP.registerCommand(F("sim/GPS/g1000n1_softkey6")));
+  btnSoft7.setCommand(
+      XP.registerCommand(F("sim/GPS/g1000n1_softkey7")));
+  btnSoft8.setCommand(
+      XP.registerCommand(F("sim/GPS/g1000n1_softkey8")));
+  btnSoft9.setCommand(
+      XP.registerCommand(F("sim/GPS/g1000n1_softkey9")));
+  btnSoft10.setCommand(
+      XP.registerCommand(F("sim/GPS/g1000n1_softkey10")));
+  btnSoft11.setCommand(
+      XP.registerCommand(F("sim/GPS/g1000n1_softkey11")));
+  btnSoft12.setCommand(
+      XP.registerCommand(F("sim/GPS/g1000n1_softkey12")));
+  encComVol.setCommand(
+      XP.registerCommand(F("sim/GPS/g1000n1_cvol_up")),
+      XP.registerCommand(F("sim/GPS/g1000n1_cvol_dn")),
+      XP.registerCommand(F("sim/audio_panel/monitor_audio_com2")));
+  btnComFF.setCommand(
+      XP.registerCommand(F("sim/GPS/g1000n1_com_ff")));
+
+  encRange.setCommand(
+      XP.registerCommand(F("sim/GPS/g1000n1_range_up")),
+      XP.registerCommand(F("sim/GPS/g1000n1_range_down")));
+  btnPanPush.setCommand(
+      XP.registerCommand(F("sim/GPS/g1000n1_pan_push")));
+  btnPanUp.setCommand(
+      XP.registerCommand(F("sim/GPS/g1000n1_pan_up")));
+  btnPanLeft.setCommand(
+      XP.registerCommand(F("sim/GPS/g1000n1_pan_left")));
+  btnPanDown.setCommand(
+      XP.registerCommand(F("sim/GPS/g1000n1_pan_down")));
+  btnPanRight.setCommand(
+      XP.registerCommand(F("sim/GPS/g1000n1_pan_right")));
+  encHeading.setCommand(
+      XP.registerCommand(F("sim/GPS/g1000n1_hdg_up")),
+      XP.registerCommand(F("sim/GPS/g1000n1_hdg_down")),
+      XP.registerCommand(F("sim/GPS/g1000n1_hdg_sync")));
+
+//   XP.registerDataRef(F("sim/flightmodel2/gear/deploy_ratio"), XPL_READ, 100, 0, &gear_ratio[0], 0);
+//   XP.registerDataRef(F("sim/flightmodel2/gear/deploy_ratio"), XPL_READ, 100, 0, &gear_ratio[1], 1);
+//   XP.registerDataRef(F("sim/flightmodel2/gear/deploy_ratio"), XPL_READ, 100, 0, &gear_ratio[2], 2);
+//   // XP.registerDataRef(F("sim/cockpit2/annunciators/gear_unsafe"), XPL_READ, 100, 1.0, &gear_unsafe);
+//   XP.registerDataRef(F("sim/cockpit/warnings/annunciators/gear_unsafe"), XPL_READ, 100, 1, &gear_unsafe);
+//   XP.registerDataRef(F("sim/flightmodel2/controls/flap1_deploy_ratio"), XPL_READ, 100, 0, &flap_ratio);
+//   XP.registerDataRef(F("sim/cockpit2/switches/instrument_brightness_ratio"), XPL_WRITE, 100, 0, &light_instr, 0);
+//   XP.registerDataRef(F("sim/cockpit2/switches/panel_brightness_ratio"), XPL_WRITE, 100, 0, &light_flood, 0);
+//   XP.registerDataRef(F("sim/cockpit2/controls/gear_handle_down"), XPL_READWRITE, 100, 0, &gear_handle_down);
+//   XP.registerDataRef(F("sim/cockpit2/controls/flap_handle_request_ratio"), XPL_READWRITE, 100, 0, &flap_handle_request_ratio);
+}
+
+// Main loop
+void loop()
+{
+  XP.xloop();
+  DigitalIn.handle();
+  leds.handle();
+
+  encNavInner.handleXP();
+  encNavOuter.handleXP();
+  encComInner.handleXP();
+  encComOuter.handleXP();
+  encCourse.handleXP();
+  encBaro.handleXP();
+  encAltInner.handleXP();
+  encAltOuter.handleXP();
+  encFMSInner.handleXP();
+  encFMSOuter.handleXP();
+  btnDirect.handleXP();
+  btnFPL.handleXP();
+  btnCLR.handleXP();
+  btnMENU.handleXP();
+  btnPROC.handleXP();
+  btnENT.handleXP();
+  encNavVol.handleXP();
+  btnNavFF.handleXP();
+  btnSoft1.handleXP();
+  btnSoft2.handleXP();
+  btnSoft3.handleXP();
+  btnSoft4.handleXP();
+  btnSoft5.handleXP();
+  btnSoft6.handleXP();
+  btnSoft7.handleXP();
+  btnSoft8.handleXP();
+  btnSoft9.handleXP();
+  btnSoft10.handleXP();
+  btnSoft11.handleXP();
+  btnSoft12.handleXP();
+  encComVol.handleXP();
+  btnComFF.handleXP();
+  encRange.handleXP();
+
+  // handle pan stick with logical dependecies
+  btnPanPush.handleXP(!DigitalIn.getBit(4, 1) && !DigitalIn.getBit(4, 2) &&
+                      !DigitalIn.getBit(4, 3) && !DigitalIn.getBit(4, 4));
+  btnPanUp.handleXP(DigitalIn.getBit(4, 0));
+  btnPanLeft.handleXP(DigitalIn.getBit(4, 0));
+  btnPanDown.handleXP(DigitalIn.getBit(4, 0));
+  btnPanRight.handleXP(DigitalIn.getBit(4, 0));
+
+  // Sync Switches 
+  if (tmrSync.isTick())
+  {
+
+  }
+
+}
+
+#endif

@@ -2,7 +2,7 @@
 #include <MemoryFree.h>
 #include <XPLDevices.h>
 
-// #define DEBUG 1
+#if G1000_MFD
 
 // MUX 0
 Encoder encNavInner(0, 1, 2, 0, enc4Pulse);
@@ -438,28 +438,6 @@ void loop()
   leds.set(LED_GEAR_LEFT, (gear_ratio[1] > 0.99) ? ledOn : ledOff);
   leds.set(LED_GEAR_RIGHT, (gear_ratio[2] > 0.99) ? ledOn : ledOff);
   leds.set(LED_GEAR_UNSAFE, (gear_unsafe != 0) ? ledOn : ledOff);
-
-#if DEBUG
-  static int count = 0;
-  if (tmrMain.isTick())
-  {
-    Serial.print("Flap: ");
-    Serial.print(swFlaps.state());
-    Serial.print(" Flap: ");
-    Serial.print(flap_handle_request_ratio);
-    Serial.print(" Instr: ");
-    Serial.print(light_instr);
-    Serial.print(" Flood: ");
-    Serial.print(light_flood);
-    Serial.print(" Memory: ");
-    Serial.print(freeMemory());
-    Serial.print(" Cycle count: ");
-    Serial.println(count);
-    count = 0;
-  }
-  else
-  {
-    count++;
-  }
-#endif
 }
+
+#endif
