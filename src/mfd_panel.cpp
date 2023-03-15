@@ -96,10 +96,10 @@ Timer tmrSync(1000.0);
 // DataRefs MUX 5
 float gear_ratio[3];
 float flap_ratio;
-long int gear_unsafe;
+long gear_unsafe;
 float light_instr = 0;
 float light_flood = 0;
-long int gear_handle_down;
+long gear_handle_down;
 float flap_handle_request_ratio;
 
 // Setup
