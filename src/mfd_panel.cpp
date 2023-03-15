@@ -351,6 +351,7 @@ void loop()
   encComVol.handleXP();
   btnComFF.handleXP();
   encRange.handleXP();
+  encHeading.handleXP();
 
   // handle pan stick with logical dependecies
   btnPanPush.handleXP(!DigitalIn.getBit(4, 1) && !DigitalIn.getBit(4, 2) &&

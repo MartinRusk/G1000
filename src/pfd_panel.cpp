@@ -23,7 +23,6 @@ Button btnMENU(1, 13);
 Button btnPROC(1, 14);
 Button btnENT(1, 15);
 // MUX 2
-
 Encoder encNavVol(2, 12, 13, 14, enc4Pulse);
 Button btnNavFF(2, 15);
 // MUX3
@@ -50,19 +49,47 @@ RepeatButton btnPanDown(4, 3, 250);
 RepeatButton btnPanRight(4, 4, 250);
 Encoder encHeading(4, 12, 13, 14, enc4Pulse);
 
-// MFD specific
+// PFD specific
+// MUX2
+Switch swMaster(2, 0);
+Switch swAVMaster(2, 1);
+Switch swPitot(2, 2);
+Switch swOxygen(2, 3);
+Button btnDeiceMax(2, 5);
+Switch2 swDeice(2, 6, 7);
+Button btnDeiceWS(2, 8);
+Switch2 swDeiceAnnun(2, 9, 10);
+Switch swBackup(2, 11);
+// MUX 5
+Switch swAltLeft(5, 0);
+Button btnStartLeft(5, 1);
+Button btnStartRight(5, 2);
+Switch swAltRight(5, 3);
+Switch swPumpLeft(5, 4);
+Switch swEngineMasterLeft(5, 5);
+Switch swEngineMasterRight(5, 6);
+Switch swPumpRight(5, 7);
+Switch swVoteLeftA(5, 8);
+Switch swVoteLeftB(5, 9);
+Button btnECUTestLeft(5, 10);
+Button btnECUTestRight(5, 11);
+Switch swVoteRightA(5, 12);
+Switch swVoteRightB(5, 13);
+
+// Datarefs
+long deice_norm;
+long deice_high;
+long deice_max;
 
 // LEDs
 LedShift leds(16, 14, 15);
-#define LED_DEICE_LOW 0
-#define LED_DEICE_MED 1
-#define LED_DEICE_HIGH 2
+#define LED_DEICE_MAX 0
+#define LED_DEICE_HIGH 1
+#define LED_DEICE_NORM 2
 
 // Timer for Main loop
 Timer tmrMain(1000.0);
 Timer tmrSync(1000.0);
-
-// DataRefs MUX 5
 
 // Setup
 void setup()
@@ -194,16 +221,70 @@ void setup()
       XP.registerCommand(F("sim/GPS/g1000n1_hdg_down")),
       XP.registerCommand(F("sim/GPS/g1000n1_hdg_sync")));
 
-//   XP.registerDataRef(F("sim/flightmodel2/gear/deploy_ratio"), XPL_READ, 100, 0, &gear_ratio[0], 0);
-//   XP.registerDataRef(F("sim/flightmodel2/gear/deploy_ratio"), XPL_READ, 100, 0, &gear_ratio[1], 1);
-//   XP.registerDataRef(F("sim/flightmodel2/gear/deploy_ratio"), XPL_READ, 100, 0, &gear_ratio[2], 2);
-//   // XP.registerDataRef(F("sim/cockpit2/annunciators/gear_unsafe"), XPL_READ, 100, 1.0, &gear_unsafe);
-//   XP.registerDataRef(F("sim/cockpit/warnings/annunciators/gear_unsafe"), XPL_READ, 100, 1, &gear_unsafe);
-//   XP.registerDataRef(F("sim/flightmodel2/controls/flap1_deploy_ratio"), XPL_READ, 100, 0, &flap_ratio);
-//   XP.registerDataRef(F("sim/cockpit2/switches/instrument_brightness_ratio"), XPL_WRITE, 100, 0, &light_instr, 0);
-//   XP.registerDataRef(F("sim/cockpit2/switches/panel_brightness_ratio"), XPL_WRITE, 100, 0, &light_flood, 0);
-//   XP.registerDataRef(F("sim/cockpit2/controls/gear_handle_down"), XPL_READWRITE, 100, 0, &gear_handle_down);
-//   XP.registerDataRef(F("sim/cockpit2/controls/flap_handle_request_ratio"), XPL_READWRITE, 100, 0, &flap_handle_request_ratio);
+  swMaster.setCommand(
+      XP.registerCommand(F("sim/electrical/battery_1_on")),
+      XP.registerCommand(F("sim/electrical/battery_1_off")));
+  swAVMaster.setCommand(
+      XP.registerCommand(F("sim/systems/avionics_on")),
+      XP.registerCommand(F("sim/systems/avionics_off")));
+  swPitot.setCommand(
+      XP.registerCommand(F("sim/ice/pitot_heat0_on")),
+      XP.registerCommand(F("sim/ice/pitot_heat0_off")));
+  // swOxygen.setCommand(());
+  btnDeiceMax.setCommand(
+      XP.registerCommand(F("aerobask/deice/max")));
+  swDeice.setCommand(
+      XP.registerCommand(F("aerobask/deice/main_up")),
+      XP.registerCommand(F("aerobask/deice/main_dn")));
+  btnDeiceWS.setCommand(
+      XP.registerCommand(F("aerobask/deice/wshld")));
+  swDeiceAnnun.setCommand(
+      XP.registerCommand(F("aerobask/deice/annun_up")),
+      XP.registerCommand(F("aerobask/deice/annun_dn")));
+  // swBackup.setCommand(());
+  // MUX 5
+  swAltLeft.setCommand(
+      XP.registerCommand(F("sim/electrical/generator_1_on")),
+      XP.registerCommand(F("sim/electrical/generator_1_off")));
+  btnStartLeft.setCommand(
+      XP.registerCommand(F("sim/starters/engage_starter_1")));
+  btnStartRight.setCommand(
+      XP.registerCommand(F("sim/starters/engage_starter_2")));
+  swAltRight.setCommand(
+      XP.registerCommand(F("sim/electrical/generator_2_on")),
+      XP.registerCommand(F("sim/electrical/generator_2_off")));
+  swPumpLeft.setCommand(
+      XP.registerCommand(F("aerobask/eng/fuel_pump1_on")),
+      XP.registerCommand(F("aerobask/eng/fuel_pump1_off")));
+  swEngineMasterLeft.setCommand(
+      XP.registerCommand(F("aerobask/eng/master1_up")),
+      XP.registerCommand(F("aerobask/eng/master1_dn")));
+  swEngineMasterRight.setCommand(
+      XP.registerCommand(F("aerobask/eng/master2_up")),
+      XP.registerCommand(F("aerobask/eng/master2_dn")));
+  swPumpRight.setCommand(
+      XP.registerCommand(F("aerobask/eng/fuel_pump2_on")),
+      XP.registerCommand(F("aerobask/eng/fuel_pump2_off")));
+  btnECUTestLeft.setCommand(
+      XP.registerCommand(F("aerobask/eng/ecu_test1")));
+  btnECUTestRight.setCommand(
+      XP.registerCommand(F("aerobask/eng/ecu_test2")));
+
+  int cmd = XP.registerCommand(F("aerobask/eng/ecu_ab1_auto"));
+  swVoteLeftA.setCommand(
+      XP.registerCommand(F("aerobask/eng/ecu_ab1_voter_a")), cmd);
+  swVoteLeftB.setCommand(
+      XP.registerCommand(F("aerobask/eng/ecu_ab1_voter_b")), cmd);
+  cmd = XP.registerCommand(F("aerobask/eng/ecu_ab2_auto"));
+  swVoteRightA.setCommand(
+      XP.registerCommand(F("aerobask/eng/ecu_ab2_voter_a")), cmd);
+  swVoteRightB.setCommand(
+      XP.registerCommand(F("aerobask/eng/ecu_ab2_voter_b")), cmd);
+
+  // DataRefs
+  XP.registerDataRef(F("aerobask/deice/lt_norm"), XPL_READ, 100, 0, &deice_norm);
+  XP.registerDataRef(F("aerobask/deice/lt_high"), XPL_READ, 100, 0, &deice_high);
+  XP.registerDataRef(F("aerobask/deice/lt_max"), XPL_READ, 100, 0, &deice_max);
 }
 
 // Main loop
@@ -246,6 +327,7 @@ void loop()
   encComVol.handleXP();
   btnComFF.handleXP();
   encRange.handleXP();
+  encHeading.handleXP();
 
   // handle pan stick with logical dependecies
   btnPanPush.handleXP(!DigitalIn.getBit(4, 1) && !DigitalIn.getBit(4, 2) &&
@@ -255,12 +337,81 @@ void loop()
   btnPanDown.handleXP(DigitalIn.getBit(4, 0));
   btnPanRight.handleXP(DigitalIn.getBit(4, 0));
 
-  // Sync Switches 
+  swMaster.handleXP();
+  swAVMaster.handleXP();
+  swPitot.handleXP();
+  // swOxygen.handleXP();
+  btnDeiceMax.handleXP();
+  swDeice.handleXP();
+  btnDeiceWS.handleXP();
+  swDeiceAnnun.handleXP();
+  // swBackup.handleXP();
+  swAltLeft.handleXP();
+  btnStartLeft.handleXP();
+  btnStartRight.handleXP();
+  swAltRight.handleXP();
+  swPumpLeft.handleXP();
+  swEngineMasterLeft.handleXP();
+  swEngineMasterRight.handleXP();
+  swPumpRight.handleXP();
+  swVoteLeftA.handleXP();
+  swVoteLeftB.handleXP();
+  btnECUTestLeft.handleXP();
+  btnECUTestRight.handleXP();
+  swVoteRightA.handleXP();
+  swVoteRightB.handleXP();
+
+  // handle pan stick with logical dependecies
+  btnPanPush.handleXP(!DigitalIn.getBit(4, 1) && !DigitalIn.getBit(4, 2) &&
+                      !DigitalIn.getBit(4, 3) && !DigitalIn.getBit(4, 4));
+  btnPanUp.handleXP(DigitalIn.getBit(4, 0));
+  btnPanLeft.handleXP(DigitalIn.getBit(4, 0));
+  btnPanDown.handleXP(DigitalIn.getBit(4, 0));
+  btnPanRight.handleXP(DigitalIn.getBit(4, 0));
+
+  // Sync Switches
   if (tmrSync.isTick())
   {
-
+    XP.commandTrigger(swMaster.getCommand());
+    XP.commandTrigger(swAVMaster.getCommand());
+    XP.commandTrigger(swPitot.getCommand());
+    // XP.commandTrigger(swOxygen.getCommand());
+    // XP.commandTrigger(swBackup.getCommand());
+    XP.commandTrigger(swAltLeft.getCommand());
+    XP.commandTrigger(swAltRight.getCommand());
+    XP.commandTrigger(swPumpLeft.getCommand());
+    XP.commandTrigger(swEngineMasterLeft.getCommand());
+    XP.commandTrigger(swEngineMasterRight.getCommand());
+    XP.commandTrigger(swPumpRight.getCommand());
+    if (swDeice.on() || swDeice.on2())
+    {
+      XP.commandTrigger(swDeice.getCommand(), 2);
+    }
+    if (swDeiceAnnun.on() || swDeiceAnnun.on2())
+    {
+      XP.commandTrigger(swDeiceAnnun.getCommand(), 2);
+    }
+    if (swVoteLeftA.on())
+    {
+      XP.commandTrigger(swVoteLeftA.getCommand());
+    }
+    else
+    {
+      XP.commandTrigger(swVoteLeftB.getCommand());
+    }
+    if (swVoteRightA.on())
+    {
+      XP.commandTrigger(swVoteRightA.getCommand());
+    }
+    else
+    {
+      XP.commandTrigger(swVoteRightB.getCommand());
+    }
   }
 
+  leds.set(LED_DEICE_NORM, deice_norm ? ledOn : ledOff);
+  leds.set(LED_DEICE_HIGH, deice_high ? ledOn : ledOff);
+  leds.set(LED_DEICE_MAX, deice_max ? ledOn : ledOff);
 }
 
 #endif
