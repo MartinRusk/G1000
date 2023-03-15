@@ -77,9 +77,9 @@ Switch swVoteRightA(5, 12);
 Switch swVoteRightB(5, 13);
 
 // Datarefs
-long deice_norm;
-long deice_high;
-long deice_max;
+float deice_norm;
+float deice_high;
+float deice_max;
 
 // LEDs
 LedShift leds(16, 14, 15);
@@ -409,9 +409,9 @@ void loop()
     }
   }
 
-  leds.set(LED_DEICE_NORM, deice_norm ? ledOn : ledOff);
-  leds.set(LED_DEICE_HIGH, deice_high ? ledOn : ledOff);
-  leds.set(LED_DEICE_MAX, deice_max ? ledOn : ledOff);
+  leds.set(LED_DEICE_NORM, deice_norm != 0 ? ledOn : ledOff);
+  leds.set(LED_DEICE_HIGH, deice_high != 0 ? ledOn : ledOff);
+  leds.set(LED_DEICE_MAX, deice_max != 0 ? ledOn : ledOff);
 }
 
 #endif
