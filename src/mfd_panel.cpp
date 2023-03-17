@@ -375,7 +375,7 @@ void loop()
   swFuelAuxRight.handleXP();
 
   // Sync Switches 
-  if (tmrSync.isTick())
+  if (tmrSync.elapsed())
   {
     XP.commandTrigger(swLightStrobe.getCommand());
     XP.commandTrigger(swLightPosition.getCommand());
@@ -383,11 +383,11 @@ void loop()
     XP.commandTrigger(swLightLanding.getCommand());
     XP.commandTrigger(swFuelAuxLeft.getCommand());
     XP.commandTrigger(swFuelAuxRight.getCommand());
-    if (swFuelLeft.on() || swFuelLeft.on2())
+    if (swFuelLeft.on1() || swFuelLeft.on2())
     {
       XP.commandTrigger(swFuelLeft.getCommand(), 2);
     }
-    if (swFuelRight.on() || swFuelRight.on2())
+    if (swFuelRight.on1() || swFuelRight.on2())
     {
       XP.commandTrigger(swFuelRight.getCommand(), 2);
     }

@@ -94,7 +94,7 @@ Timer tmrSync(1000.0);
 // Setup
 void setup()
 {
-  Serial.begin(XPLDIRECT_BAUDRATE);
+    // Setup XP interface
   XP.begin("G1000 PFD");
 
   // Setup Multiplexers
@@ -370,7 +370,7 @@ void loop()
   btnPanRight.handleXP(DigitalIn.getBit(4, 0));
 
   // Sync Switches
-  if (tmrSync.isTick())
+  if (tmrSync.elapsed())
   {
     XP.commandTrigger(swMaster.getCommand());
     XP.commandTrigger(swAVMaster.getCommand());
@@ -383,11 +383,11 @@ void loop()
     XP.commandTrigger(swEngineMasterLeft.getCommand());
     XP.commandTrigger(swEngineMasterRight.getCommand());
     XP.commandTrigger(swPumpRight.getCommand());
-    if (swDeice.on() || swDeice.on2())
+    if (swDeice.on1() || swDeice.on2())
     {
       XP.commandTrigger(swDeice.getCommand(), 2);
     }
-    if (swDeiceAnnun.on() || swDeiceAnnun.on2())
+    if (swDeiceAnnun.on1() || swDeiceAnnun.on2())
     {
       XP.commandTrigger(swDeiceAnnun.getCommand(), 2);
     }
