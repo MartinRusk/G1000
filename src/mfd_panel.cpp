@@ -105,6 +105,7 @@ float flap_handle_request_ratio;
 // Setup
 void setup()
 {
+// Setup XP interface
   Serial.begin(XPLDIRECT_BAUDRATE);
   XP.begin("G1000 MFD");
 

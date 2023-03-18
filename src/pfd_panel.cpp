@@ -69,12 +69,10 @@ Switch swPumpLeft(5, 4);
 Switch swEngineMasterLeft(5, 5);
 Switch swEngineMasterRight(5, 6);
 Switch swPumpRight(5, 7);
-Switch swVoteLeftA(5, 8);
-Switch swVoteLeftB(5, 9);
+Switch2 swVoteLeft(5, 8, 9);
 Button btnECUTestLeft(5, 10);
 Button btnECUTestRight(5, 11);
-Switch swVoteRightA(5, 12);
-Switch swVoteRightB(5, 13);
+Switch2 swVoteRight(5, 12, 13);
 
 // Datarefs
 float deice_norm;
@@ -94,7 +92,8 @@ Timer tmrSync(1000.0);
 // Setup
 void setup()
 {
-    // Setup XP interface
+  // Setup XP interface
+  Serial.begin(XPLDIRECT_BAUDRATE);
   XP.begin("G1000 PFD");
 
   // Setup Multiplexers
@@ -230,7 +229,9 @@ void setup()
   swPitot.setCommand(
       XP.registerCommand(F("sim/ice/pitot_heat0_on")),
       XP.registerCommand(F("sim/ice/pitot_heat0_off")));
-  // swOxygen.setCommand(());
+  swOxygen.setCommand(
+    XP.registerCommand(F("aerobask/oxygen_open")),
+    XP.registerCommand(F("aerobask/oxygen_close")));
   btnDeiceMax.setCommand(
       XP.registerCommand(F("aerobask/deice/max")));
   swDeice.setCommand(
@@ -270,16 +271,14 @@ void setup()
   btnECUTestRight.setCommand(
       XP.registerCommand(F("aerobask/eng/ecu_test2")));
 
-  int cmd = XP.registerCommand(F("aerobask/eng/ecu_ab1_auto"));
-  swVoteLeftA.setCommand(
-      XP.registerCommand(F("aerobask/eng/ecu_ab1_voter_a")), cmd);
-  swVoteLeftB.setCommand(
-      XP.registerCommand(F("aerobask/eng/ecu_ab1_voter_b")), cmd);
-  cmd = XP.registerCommand(F("aerobask/eng/ecu_ab2_auto"));
-  swVoteRightA.setCommand(
-      XP.registerCommand(F("aerobask/eng/ecu_ab2_voter_a")), cmd);
-  swVoteRightB.setCommand(
-      XP.registerCommand(F("aerobask/eng/ecu_ab2_voter_b")), cmd);
+  swVoteLeft.setCommand(
+      XP.registerCommand(F("aerobask/eng/ecu_ab1_voter_a")), 
+      XP.registerCommand(F("aerobask/eng/ecu_ab1_auto")),
+      XP.registerCommand(F("aerobask/eng/ecu_ab1_voter_b")));
+  swVoteRight.setCommand(
+      XP.registerCommand(F("aerobask/eng/ecu_ab2_voter_a")),
+      XP.registerCommand(F("aerobask/eng/ecu_ab2_auto")), 
+      XP.registerCommand(F("aerobask/eng/ecu_ab2_voter_b")));
 
   // DataRefs
   XP.registerDataRef(F("aerobask/deice/lt_norm"), XPL_READ, 100, 0, &deice_norm);
@@ -340,7 +339,7 @@ void loop()
   swMaster.handleXP();
   swAVMaster.handleXP();
   swPitot.handleXP();
-  // swOxygen.handleXP();
+  swOxygen.handleXP();
   btnDeiceMax.handleXP();
   swDeice.handleXP();
   btnDeiceWS.handleXP();
@@ -354,13 +353,11 @@ void loop()
   swEngineMasterLeft.handleXP();
   swEngineMasterRight.handleXP();
   swPumpRight.handleXP();
-  swVoteLeftA.handleXP();
-  swVoteLeftB.handleXP();
+  swVoteLeft.handleXP();
   btnECUTestLeft.handleXP();
   btnECUTestRight.handleXP();
-  swVoteRightA.handleXP();
-  swVoteRightB.handleXP();
-
+  swVoteRight.handleXP();
+  
   // handle pan stick with logical dependecies
   btnPanPush.handleXP(!DigitalIn.getBit(4, 1) && !DigitalIn.getBit(4, 2) &&
                       !DigitalIn.getBit(4, 3) && !DigitalIn.getBit(4, 4));
@@ -375,7 +372,7 @@ void loop()
     XP.commandTrigger(swMaster.getCommand());
     XP.commandTrigger(swAVMaster.getCommand());
     XP.commandTrigger(swPitot.getCommand());
-    // XP.commandTrigger(swOxygen.getCommand());
+    XP.commandTrigger(swOxygen.getCommand());
     // XP.commandTrigger(swBackup.getCommand());
     XP.commandTrigger(swAltLeft.getCommand());
     XP.commandTrigger(swAltRight.getCommand());
@@ -383,6 +380,8 @@ void loop()
     XP.commandTrigger(swEngineMasterLeft.getCommand());
     XP.commandTrigger(swEngineMasterRight.getCommand());
     XP.commandTrigger(swPumpRight.getCommand());
+    XP.commandTrigger(swVoteLeft.getCommand());
+    XP.commandTrigger(swVoteRight.getCommand());
     if (swDeice.on1() || swDeice.on2())
     {
       XP.commandTrigger(swDeice.getCommand(), 2);
@@ -390,22 +389,6 @@ void loop()
     if (swDeiceAnnun.on1() || swDeiceAnnun.on2())
     {
       XP.commandTrigger(swDeiceAnnun.getCommand(), 2);
-    }
-    if (swVoteLeftA.on())
-    {
-      XP.commandTrigger(swVoteLeftA.getCommand());
-    }
-    else
-    {
-      XP.commandTrigger(swVoteLeftB.getCommand());
-    }
-    if (swVoteRightA.on())
-    {
-      XP.commandTrigger(swVoteRightA.getCommand());
-    }
-    else
-    {
-      XP.commandTrigger(swVoteRightB.getCommand());
     }
   }
 
