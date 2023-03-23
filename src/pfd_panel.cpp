@@ -1,5 +1,4 @@
 #include <Arduino.h>
-#include <MemoryFree.h>
 #include <XPLDevices.h>
 
 #if G1000_PFD
