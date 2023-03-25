@@ -2,22 +2,14 @@
 
 This repository hosts the firmware and design files for the mrusk G1000 device. 
 
-The implementation is based the original FlightSimMaker solution (see https://docs.google.com/presentation/d/1siKPc6BkJSg9kihLLKLU8frNLp2IIBlw_dUE9n4Btq4).
+The master branch now uses the XPLDirect driver for X-Plane by Curiosity Workshop. Software is (c) by mrusk and Curiosity Workshop. 
+For the previously supported RealSimGear driver solution (also for MSFS2020) please look into the RealSimGear branch. Software provided here is licensed under GPL V3.0 License.
 
-Contains CAD files from the FlightSimMaker Discord https://discord.gg/YVbK6dmkeV.
+Please visit the Curiosity Workshop Discord https://discord.gg/gzXetjEST4 and the FlightSimMaker Discord https://discord.gg/YVbK6dmkeV.
 
 3D Design also available at Printables: https://www.printables.com/de/model/199536-flight-simulator-g1000-nxi
 
 PCBs to build the solution are currently out of stock. Order details are given in the building instructions. In case of trouble you may contact me via g1000nxi@outlook.de
-
-Software is (c) by mrusk. It uses the RealSimGear Drivers from https://help.realsimgear.com/en/articles/3090794-just-the-downloads. 
-However, the recommended Version is V1.5.x since the newer Versions may have some compatibility issues.
-
-V1.5 for MSFS: https://1drv.ms/u/s!AhZs4hE0pPvcsbh1ovlsRtdR6_IBfg?e=L3VeRq
-
-V1.5 for XPlane 11 and 12: https://1drv.ms/u/s!AhZs4hE0pPvcsblXLjjgcCkKaBG6_w?e=KqNIyT
-
-Software provided here is licensed under GPL V3.0 License.
 
 3D design files are (c) by DKF and mrusk, licensed under a
 [Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License][cc-by-nc-sa].
