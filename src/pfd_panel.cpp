@@ -289,6 +289,13 @@ void loop()
   leds.set(LED_DEICE_NORM, deice_norm != 0 ? ledOn : ledOff);
   leds.set(LED_DEICE_HIGH, deice_high != 0 ? ledOn : ledOff);
   leds.set(LED_DEICE_MAX, deice_max != 0 ? ledOn : ledOff);
+
+  if (tmrMain.elapsed())
+  {
+    char tmp[16];
+    sprintf(tmp, " %ld Cycles/s", tmrMain.count());
+    XP.sendDebugMessage(tmp);
+  }
 }
 
 #endif

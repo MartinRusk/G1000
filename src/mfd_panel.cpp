@@ -89,6 +89,7 @@ LedShift leds(16, 14, 15);
 #define LED_GEAR_UNSAFE 6
 
 // Timer for Main loop
+Timer tmrMain(1000.0);
 Timer tmrSync(1000.0);
 
 // DataRefs MUX 5
@@ -341,6 +342,13 @@ void loop()
   
   // gear unsafe LED
   leds.set(LED_GEAR_UNSAFE, (gear_unsafe != 0) ? ledOn : ledOff);
+
+  if (tmrMain.elapsed())
+  {
+    char tmp[16];
+    sprintf(tmp, " %ld Cycles/s", tmrMain.count());
+    XP.sendDebugMessage(tmp);
+  }
 }
 
 #endif
