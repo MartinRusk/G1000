@@ -195,7 +195,9 @@ void setup()
   XP.registerDataRef(F("sim/cockpit/warnings/annunciators/gear_unsafe"), XPL_READ, 100, 1, &gear_unsafe);
   XP.registerDataRef(F("sim/flightmodel2/controls/flap1_deploy_ratio"), XPL_READ, 100, 0, &flap_ratio);
   XP.registerDataRef(F("sim/cockpit2/switches/instrument_brightness_ratio"), XPL_WRITE, 100, 0, &light_instr, 0);
+  XP.registerDataRef(F("aerobask/knob_inst"), XPL_WRITE, 100, 0, &light_instr);
   XP.registerDataRef(F("sim/cockpit2/switches/panel_brightness_ratio"), XPL_WRITE, 100, 0, &light_flood, 0);
+  XP.registerDataRef(F("aerobask/knob_flood"), XPL_WRITE, 100, 0, &light_flood);
   XP.registerDataRef(F("sim/cockpit2/controls/gear_handle_down"), XPL_READWRITE, 100, 0, &gear_handle_down);
   XP.registerDataRef(F("sim/cockpit2/controls/flap_handle_request_ratio"), XPL_READWRITE, 100, 0, &flap_handle_request_ratio);
 }
@@ -299,9 +301,9 @@ void loop()
   gear_handle_down = swGear.value(0.0, 1.0);
 
   potInstr.handle();
-  light_instr = potInstr.value();
+  light_instr = 0.01 * round(100.0 * potInstr.value());
   potFlood.handle();
-  light_flood = potFlood.value();
+  light_flood = 0.01 * round(100.0 * potFlood.value());
 
   // Update flap LEDs
   if (flap_ratio < 0.05)
@@ -343,12 +345,12 @@ void loop()
   // gear unsafe LED
   leds.set(LED_GEAR_UNSAFE, (gear_unsafe != 0) ? ledOn : ledOff);
 
-  if (tmrMain.elapsed())
-  {
-    char tmp[16];
-    sprintf(tmp, " %ld Cycles/s", tmrMain.count());
-    XP.sendDebugMessage(tmp);
-  }
+  // if (tmrMain.elapsed())
+  // {
+  //   char tmp[16];
+  //   sprintf(tmp, " %ld Cycles/s", tmrMain.count());
+  //   XP.sendDebugMessage(tmp);
+  // }
 }
 
 #endif
